@@ -69,7 +69,7 @@ const nitros::NitrosPublisherSubscriberConfigMap CONFIG_MAP = {
   {INPUT_LEFT_COMPONENT_KEY,
     {
       .type = nitros::NitrosPublisherSubscriberType::NEGOTIATED,
-      .qos = rclcpp::QoS(1),
+      .qos = rclcpp::QoS(10),
       .compatible_data_format = INPUT_DEFAULT_TENSOR_FORMAT,
       .topic_name = INPUT_LEFT_TOPIC_NAME,
     }
@@ -77,7 +77,7 @@ const nitros::NitrosPublisherSubscriberConfigMap CONFIG_MAP = {
   {INPUT_RIGHT_COMPONENT_KEY,
     {
       .type = nitros::NitrosPublisherSubscriberType::NEGOTIATED,
-      .qos = rclcpp::QoS(1),
+      .qos = rclcpp::QoS(10),
       .compatible_data_format = INPUT_DEFAULT_TENSOR_FORMAT,
       .topic_name = INPUT_RIGHT_TOPIC_NAME,
     }
@@ -85,7 +85,7 @@ const nitros::NitrosPublisherSubscriberConfigMap CONFIG_MAP = {
   {OUTPUT_COMPONENT_KEY,
     {
       .type = nitros::NitrosPublisherSubscriberType::NEGOTIATED,
-      .qos = rclcpp::QoS(1),
+      .qos = rclcpp::QoS(10),
       .compatible_data_format = OUTPUT_DEFAULT_TENSOR_FORMAT,
       .topic_name = OUTPUT_TOPIC_NAME,
       .frame_id_source_key = INPUT_LEFT_COMPONENT_KEY,
@@ -94,7 +94,7 @@ const nitros::NitrosPublisherSubscriberConfigMap CONFIG_MAP = {
   {INPUT_LEFT_CAM_COMPONENT_KEY,
     {
       .type = nitros::NitrosPublisherSubscriberType::NEGOTIATED,
-      .qos = rclcpp::QoS(1),
+      .qos = rclcpp::QoS(10),
       .compatible_data_format = INPUT_CAMERA_INFO_FORMAT,
       .topic_name = INPUT_LEFT_CAMERA_TOPIC_NAME,
     }
@@ -102,7 +102,7 @@ const nitros::NitrosPublisherSubscriberConfigMap CONFIG_MAP = {
   {INPUT_RIGHT_CAM_COMPONENT_KEY,
     {
       .type = nitros::NitrosPublisherSubscriberType::NEGOTIATED,
-      .qos = rclcpp::QoS(1),
+      .qos = rclcpp::QoS(10),
       .compatible_data_format = INPUT_CAMERA_INFO_FORMAT,
       .topic_name = INPUT_RIGHT_CAMERA_TOPIC_NAME,
     }
