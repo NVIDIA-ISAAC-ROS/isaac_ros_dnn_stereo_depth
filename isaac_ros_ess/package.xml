@@ -13,7 +13,7 @@ license agreement from NVIDIA CORPORATION is strictly prohibited.
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>isaac_ros_ess</name>
-  <version>0.9.0</version>
+  <version>0.11.0</version>
   <description>DNN Stereo Disparity Network for Isaac ROS</description>
 
   <maintainer email="xutongr@nvidia.com">Xutong Ren</maintainer>
@@ -26,6 +26,9 @@ license agreement from NVIDIA CORPORATION is strictly prohibited.
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>isaac_ros_nitros</depend>
+  <depend>isaac_ros_nitros_camera_info_type</depend>
+  <depend>isaac_ros_nitros_disparity_image_type</depend>
+  <depend>isaac_ros_nitros_image_type</depend>
   <depend>isaac_ros_stereo_image_proc</depend>
 
   <test_depend>ament_lint_auto</test_depend>
