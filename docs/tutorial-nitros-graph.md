@@ -14,7 +14,7 @@ If you have an [Argus-compatible camera](https://github.com/NVIDIA-ISAAC-ROS/isa
 To start the graph, follow the steps below:
 
 1. Follow the [Quickstart section](../README.md#quickstart) up to step 6 in the main README.
-   
+
 2. Outside the container, clone an additional repository required to run Argus-compatible camera under `~/workspaces/isaac_ros-dev/src`.
 
     ```bash
@@ -25,17 +25,21 @@ To start the graph, follow the steps below:
     git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_argus_camera
     ```
 
-3.  Inside the container, build and source the workspace:
+3. Inside the container, build and source the workspace:
+
     ```bash
     cd /workspaces/isaac_ros-dev && \
       colcon build && \
       source install/setup.bash
     ```
-4.  (Optional) Run tests to verify complete and correct installation:
+
+4. (Optional) Run tests to verify complete and correct installation:
+
     ```bash
     colcon test --executor sequential
     ```
 
 5. Launch ESS Disparity Node:
+
    ```bash
    ros2 launch isaac_ros_ess isaac_ros_argus_ess.launch.py engine_file_path:=/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/resources/ess.engine

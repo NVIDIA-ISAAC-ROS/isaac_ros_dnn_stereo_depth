@@ -1,12 +1,19 @@
-/**
- * Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
- *
- * NVIDIA CORPORATION and its licensors retain all intellectual property
- * and proprietary rights in and to this software, related documentation
- * and any modifications thereto.  Any use, reproduction, disclosure or
- * distribution of this software and related documentation without an express
- * license agreement from NVIDIA CORPORATION is strictly prohibited.
- */
+// SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
+// Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// SPDX-License-Identifier: Apache-2.0
 
 #include "isaac_ros_ess/ess_disparity_node.hpp"
 
@@ -58,9 +65,9 @@ const std::vector<std::pair<std::string, std::string>> EXTENSIONS = {
   {"isaac_ros_nitros", "gxf/cuda/libgxf_cuda.so"},
   {"isaac_ros_nitros", "gxf/serialization/libgxf_serialization.so"},
   {"isaac_ros_nitros", "gxf/tensorops/libgxf_tensorops.so"},
-  {"isaac_ros_stereo_image_proc", "lib/libgxf_disparity_extension.so"},
-  {"isaac_ros_stereo_image_proc", "lib/libgxf_synchronization.so"},
-  {"isaac_ros_ess", "gxf/ess/libgxf_cvcore_ess.so"}
+  {"isaac_ros_nitros", "gxf/libgxf_disparity_extension.so"},
+  {"isaac_ros_nitros", "gxf/libgxf_synchronization.so"},
+  {"isaac_ros_nitros", "gxf/ess/libgxf_cvcore_ess.so"}
 };
 const std::vector<std::string> PRESET_EXTENSION_SPEC_NAMES = {
   "isaac_ros_ess",
