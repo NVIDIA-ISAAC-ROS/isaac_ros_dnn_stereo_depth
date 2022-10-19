@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
-# Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+
+# SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
+# Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
-# NVIDIA CORPORATION and its licensors retain all intellectual property
-# and proprietary rights in and to this software, related documentation
-# and any modifications thereto.  Any use, reproduction, disclosure or
-# distribution of this software and related documentation without an express
-# license agreement from NVIDIA CORPORATION is strictly prohibited.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
 
 # This script loads images from a folder and sends them to the ESSDisparityNode for inference,
 # then saves the output prediction to spcified location as an image.
@@ -30,6 +40,8 @@ def get_args():
                         help='Absolute path to save your result.')
     parser.add_argument('--raw_inputs', action='store_true',
                         help='Use rosbag as inputs or raw image and camera info files as inputs.')
+    parser.add_argument('--enable_rosbag', action='store_true', help='Save output or display it',
+                        default=False)
     parser.add_argument('--rosbag_path',
                         default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/'
                                 'resources/rosbags/ess_rosbag',
@@ -63,7 +75,7 @@ class ESSVisualizer(Node):
 
         if self.args.raw_inputs:
             self._prepare_raw_inputs()
-        else:
+        elif self.args.enable_rosbag:
             self._prepare_rosbag_inputs()
 
     def _prepare_rosbag_inputs(self):
