@@ -4,6 +4,12 @@ DNN Stereo Disparity includes packages for predicting disparity of stereo input.
 
 <div align="center"><img src="resources/warehouse.gif" width="500px" title="Applying Colormap of ESS Disparity Node Ouput to the Input Image."/></div>
 
+---
+## Webinar Available
+Learn how to use this package by watching our on-demand webinar: [Using ML Models in ROS2 to Robustly Estimate Distance to Obstacles](https://gateway.on24.com/wcc/experience/elitenvidiabrill/1407606/3998202/isaac-ros-webinar-series)
+
+---
+
 ## Overview
 
 This repository provides an NVIDIA hardware-accelerated package for DNN-based stereo disparity. Stereo disparity (with additional processing) can produce a depth image or point cloud of a scene for robot navigation. The `isaac_ros_ess` package uses the [ESS](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/dnn_stereo_disparity) DNN to perform stereo depth estimation via continuous disparity prediction. Given a pair of stereo input images, the package generates a disparity map of the left input image.
@@ -33,6 +39,7 @@ These data have been collected per the methodology described [here](https://gith
 ## Table of Contents
 
 - [Isaac ROS DNN Stereo Disparity](#isaac-ros-dnn-stereo-disparity)
+  - [Webinar Available](#webinar-available)
   - [Overview](#overview)
     - [ESS DNN](#ess-dnn)
     - [Isaac ROS NITROS Acceleration](#isaac-ros-nitros-acceleration)
