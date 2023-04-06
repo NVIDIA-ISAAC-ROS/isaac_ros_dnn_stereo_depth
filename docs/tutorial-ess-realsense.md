@@ -6,7 +6,7 @@
 
 This tutorial demonstrates how to perform stereo-camera-based reconstruction using a [RealSense](https://www.intel.com/content/www/us/en/architecture-and-technology/realsense-overview.html) camera and [isaac_ros_ess](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_dnn_stereo_disparity).
 
-> Note: This tutorial has been tested with a RealSense D455/D435 camera connected to a Jetson Xavier AGX, as well as an x86 PC with an NVIDIA graphics card.
+> **Note**: This tutorial requires a compatible RealSense camera from the list available [here](https://github.com/NVIDIA-ISAAC-ROS/.github/blob/main/profile/realsense-setup.md#camera-compatibility).
 
 ## Tutorial Walkthrough
 

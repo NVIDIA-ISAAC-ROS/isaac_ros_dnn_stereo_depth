@@ -5,22 +5,28 @@ DNN Stereo Disparity includes packages for predicting disparity of stereo input.
 <div align="center"><img src="resources/warehouse.gif" width="500px" title="Applying Colormap of ESS Disparity Node Ouput to the Input Image."/></div>
 
 ---
+
 ## Webinar Available
-Learn how to use this package by watching our on-demand webinar: [Using ML Models in ROS2 to Robustly Estimate Distance to Obstacles](https://gateway.on24.com/wcc/experience/elitenvidiabrill/1407606/3998202/isaac-ros-webinar-series)
+
+Learn how to use this package by watching our on-demand webinar: [Using ML Models in ROS 2 to Robustly Estimate Distance to Obstacles](https://gateway.on24.com/wcc/experience/elitenvidiabrill/1407606/3998202/isaac-ros-webinar-series)
 
 ---
 
 ## Overview
 
-This repository provides an NVIDIA hardware-accelerated package for DNN-based stereo disparity. Stereo disparity (with additional processing) can produce a depth image or point cloud of a scene for robot navigation. The `isaac_ros_ess` package uses the [ESS](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/dnn_stereo_disparity) DNN to perform stereo depth estimation via continuous disparity prediction. Given a pair of stereo input images, the package generates a disparity map of the left input image.
+Isaac ROS DNN Disparity provides a GPU-accelerated package for DNN-based stereo disparity. Stereo disparity is calculated from a time-synchronized image pair sourced from a stereo camera and is used to produce a depth image or a point cloud of a scene. The `isaac_ros_ess` package uses the [ESS DNN model](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/dnn_stereo_disparity) to perform stereo depth estimation via continuous disparity prediction. Given a pair of stereo input images, the package generates a disparity map of the left input image.
 
-> Check your requirements against package [input limitations](#input-restrictions).
+<div align="center"><img src="resources/isaac_ros_ess_nodegraph.png" width="800px" title="graph of nodes using ESS"/></div>
+
+ESS is used in a graph of nodes to provide a disparity prediction from an input left and right stereo image pair. Images to ESS need to be rectified and resized to the appropriate input resolution. The aspect ratio of the image needs to be maintained, so the image may need to be cropped and resized to maintain the input aspect ratio. The graph for DNN encode, to DNN inference, to DNN decode is part of the ESS node. Inference is performed using TensorRT, as the ESS DNN model is designed to use optimizations supported by TensorRT.
 
 ### ESS DNN
 
-[ESS](https://arxiv.org/pdf/1803.09719.pdf) stands for Enhanced Semi-Supervised stereo disparity DNN, which was developed by NVIDIA. The ESS DNN is used to predict the disparity for each pixel from stereo camera image pairs. This network has improvements over classic CV approaches that use epi-polar geometry to compute disparity, as the DNN can learn to predict disparity in cases where epi-polar geometry feature matching fails. The semi-supervised learning and stereo disparity matching makes the DNN robust to environment that is unseen in the training datasets and occluded objects. This DNN is optimized for and evaluated with RGB global shutter stereo camera images, and accuracy may vary with monochrome images.
+[ESS](https://arxiv.org/pdf/1803.09719.pdf) stands for Enhanced Semi-Supervised stereo disparity, developed by NVIDIA. The ESS DNN is used to predict the disparity for each pixel from stereo camera image pairs. This network has improvements over classic CV approaches that use epipolar geometry to compute disparity, as the DNN can learn to predict disparity in cases where epipolar geometry feature matching fails. The semi-supervised learning and stereo disparity matching makes the ESS DNN robust in environments unseen in the training datasets and with occluded objects. This DNN is optimized for and evaluated with color (RGB) global shutter stereo camera images, and accuracy may vary with monochrome stereo images used in analytic computer vision approaches to stereo disparity.
 
 The predicted [disparity](https://en.wikipedia.org/wiki/Binocular_disparity) values represent the distance a point moves from one image to the other in a stereo image pair (a.k.a. the binocular image pair). The disparity is inversely proportional to the depth (i.e. `disparity = focalLength x baseline / depth`). Given the [focal length](https://en.wikipedia.org/wiki/Focal_length) and [baseline](https://en.wikipedia.org/wiki/Stereo_camera) of the camera that generates a stereo image pair, the predicted disparity map from the `isaac_ros_ess` package can be used to compute depth and generate a [point cloud](https://en.wikipedia.org/wiki/Point_cloud).
+
+> **Note**: Compare the requirements of your use case against the package [input limitations](#input-restrictions).
 
 ### Isaac ROS NITROS Acceleration
 
@@ -28,13 +34,12 @@ This package is powered by [NVIDIA Isaac Transport for ROS (NITROS)](https://dev
 
 ## Performance
 
-The following are the benchmark performance results of the prepared pipelines in this package, by supported platform:
+The following table summarizes the per-platform performance statistics of sample graphs that use this package, with links included to the full benchmark output. These benchmark configurations are taken from the [Isaac ROS Benchmark](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark#list-of-isaac-ros-benchmarks) collection, based on the [`ros2_benchmark`](https://github.com/NVIDIA-ISAAC-ROS/ros2_benchmark) framework.
 
-| Pipeline                   | AGX Orin           | Orin Nano        | x86_64 w/ RTX 3060 Ti |
-| -------------------------- | ------------------ | ---------------- | --------------------- |
-| ESS Disparity Node (1080p) | 51 fps <br> 17.3ms | 16 fps <br> 60ms | 98 fps <br> 7.6ms     |
-
-These data have been collected per the methodology described [here](https://github.com/NVIDIA-ISAAC-ROS/.github/blob/main/profile/performance-summary.md#methodology).
+| Sample Graph                                                                                                                            | Input Size | AGX Orin                                                                                                                                 | Orin NX                                                                                                                                 | x86_64 w/ RTX 3060 Ti                                                                                                                             |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/scripts//isaac_ros_ess_node.py)   | 1080p      | [63.6 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-agx_orin.json)<br>2.6 ms | [24.5 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-orin_nx.json)<br>3.0 ms | [131 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-x86_64_rtx_3060Ti.json)<br>0.73 ms |
+| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/scripts//isaac_ros_ess_graph.py) | 1080p      | [52.7 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-agx_orin.json)<br>20 ms | [20.8 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-orin_nx.json)<br>50 ms | [116 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-x86_64_rtx_3060Ti.json)<br>8.7 ms |
 
 ## Table of Contents
 
@@ -76,24 +81,24 @@ These data have been collected per the methodology described [here](https://gith
 
 ## Latest Update
 
-Update 2022-10-19: Updated OSS licensing
+Update 2023-04-05: Source available GXF extensions
 
 ## Supported Platforms
 
-This package is designed and tested to be compatible with ROS2 Humble running on [Jetson](https://developer.nvidia.com/embedded-computing) or an x86_64 system with an NVIDIA GPU.
+This package is designed and tested to be compatible with ROS 2 Humble running on [Jetson](https://developer.nvidia.com/embedded-computing) or an x86_64 system with an NVIDIA GPU.
 
-> **Note**: Versions of ROS2 earlier than Humble are **not** supported. This package depends on specific ROS2 implementation features that were only introduced beginning with the Humble release.
+> **Note**: Versions of ROS 2 earlier than Humble are **not** supported. This package depends on specific ROS 2 implementation features that were only introduced beginning with the Humble release.
 
-| Platform | Hardware                                                                                                                                                                                          | Software                                                                                                             | Notes                                                                                                                                                                                   |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Jetson   | [AGX Orin](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/) <br> [Orin Nano](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-agx-xavier/) | [JetPack 5.0.2](https://developer.nvidia.com/embedded/jetpack)                                                       | For best performance, ensure that [power settings](https://docs.nvidia.com/jetson/archives/r34.1/DeveloperGuide/text/SD/PlatformPowerAndPerformance.html) are configured appropriately. |
-| x86_64   | NVIDIA GPU                                                                                                                                                                                        | [Ubuntu 20.04+](https://releases.ubuntu.com/20.04/) <br> [CUDA 11.6.1+](https://developer.nvidia.com/cuda-downloads) |
+| Platform | Hardware                                                                                                                                                                                          | Software                                                                                                           | Notes                                                                                                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Jetson   | [AGX Orin](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/) <br> [Orin Nano](https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-agx-xavier/) | [JetPack 5.1.1](https://developer.nvidia.com/embedded/jetpack)                                                     | For best performance, ensure that [power settings](https://docs.nvidia.com/jetson/archives/r34.1/DeveloperGuide/text/SD/PlatformPowerAndPerformance.html) are configured appropriately. |
+| x86_64   | NVIDIA GPU                                                                                                                                                                                        | [Ubuntu 20.04+](https://releases.ubuntu.com/20.04/) <br> [CUDA 11.8+](https://developer.nvidia.com/cuda-downloads) |
 
 ### Docker
 
 To simplify development, we strongly recommend leveraging the Isaac ROS Dev Docker images by following [these steps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_common/blob/main/docs/dev-env-setup.md). This will streamline your development environment setup with the correct versions of dependencies on both Jetson and x86_64 platforms.
 
-> **Note:** All Isaac ROS quick start guides, tutorials, and examples have been designed with the Isaac ROS Docker images as a prerequisite.
+> **Note**: All Isaac ROS quick start guides, tutorials, and examples have been designed with the Isaac ROS Docker images as a prerequisite.
 
 ## Quickstart
 
@@ -297,6 +302,7 @@ Make sure that the ROS bag has a reasonable size and publish rate.
 
 | Date       | Changes                                    |
 | ---------- | ------------------------------------------ |
+| 2023-04-05 | Source available GXF extensions            |
 | 2022-10-19 | Updated OSS licensing                      |
 | 2022-08-31 | Update to be compatible with JetPack 5.0.2 |
 | 2022-06-30 | Initial release                            |
