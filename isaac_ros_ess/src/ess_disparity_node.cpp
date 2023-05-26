@@ -45,7 +45,7 @@ constexpr char INPUT_LEFT_TOPIC_NAME[] = "left/image_rect";
 constexpr char INPUT_RIGHT_COMPONENT_KEY[] = "sync/right_image_receiver";
 constexpr char INPUT_RIGHT_TOPIC_NAME[] = "right/image_rect";
 
-constexpr char OUTPUT_COMPONENT_KEY[] = "vault/vault";
+constexpr char OUTPUT_COMPONENT_KEY[] = "sink/sink";
 constexpr char OUTPUT_DEFAULT_TENSOR_FORMAT[] = "nitros_disparity_image_32FC1";
 constexpr char OUTPUT_TOPIC_NAME[] = "disparity";
 
@@ -65,7 +65,6 @@ const std::vector<std::pair<std::string, std::string>> EXTENSIONS = {
   {"isaac_ros_gxf", "gxf/lib/cuda/libgxf_cuda.so"},
   {"isaac_ros_gxf", "gxf/lib/serialization/libgxf_serialization.so"},
   {"isaac_ros_gxf", "gxf/lib/libgxf_synchronization.so"},
-  {"isaac_ros_image_proc", "gxf/lib/image_proc/libgxf_tensorops.so"},
   {"isaac_ros_stereo_image_proc", "gxf/lib/sgm_disparity/libgxf_disparity_extension.so"},
   {"isaac_ros_ess", "gxf/lib/ess/libgxf_cvcore_ess.so"}
 };

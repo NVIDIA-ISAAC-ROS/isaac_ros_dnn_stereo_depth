@@ -36,10 +36,11 @@ This package is powered by [NVIDIA Isaac Transport for ROS (NITROS)](https://dev
 
 The following table summarizes the per-platform performance statistics of sample graphs that use this package, with links included to the full benchmark output. These benchmark configurations are taken from the [Isaac ROS Benchmark](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark#list-of-isaac-ros-benchmarks) collection, based on the [`ros2_benchmark`](https://github.com/NVIDIA-ISAAC-ROS/ros2_benchmark) framework.
 
-| Sample Graph                                                                                                                            | Input Size | AGX Orin                                                                                                                                 | Orin NX                                                                                                                                 | x86_64 w/ RTX 3060 Ti                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/scripts//isaac_ros_ess_node.py)   | 1080p      | [63.6 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-agx_orin.json)<br>2.6 ms | [24.5 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-orin_nx.json)<br>3.0 ms | [131 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-x86_64_rtx_3060Ti.json)<br>0.73 ms |
-| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/scripts//isaac_ros_ess_graph.py) | 1080p      | [52.7 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-agx_orin.json)<br>20 ms | [20.8 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-orin_nx.json)<br>50 ms | [116 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-x86_64_rtx_3060Ti.json)<br>8.7 ms |
+| Sample Graph                                                                                                                            | Input Size | AGX Orin                                                                                                                                 | Orin NX                                                                                                                                 | x86_64 w/ RTX 4060 Ti                                                                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/scripts//isaac_ros_ess_node.py)   | 1080p      | [63.6 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-agx_orin.json)<br>3.5 ms | [24.8 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-orin_nx.json)<br>5.0 ms | [173 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-nuc_4060ti.json)<br>3.4 ms |
+| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/scripts//isaac_ros_ess_graph.py) | 1080p      | [52.7 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-agx_orin.json)<br>21 ms | [20.8 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-orin_nx.json)<br>50 ms | [156 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-nuc_4060ti.json)<br>10 ms |
+
 
 ## Table of Contents
 
@@ -81,7 +82,7 @@ The following table summarizes the per-platform performance statistics of sample
 
 ## Latest Update
 
-Update 2023-04-05: Source available GXF extensions
+Update 2023-05-25: Upgraded model (1.1.0).
 
 ## Supported Platforms
 
@@ -143,7 +144,7 @@ To simplify development, we strongly recommend leveraging the Isaac ROS Dev Dock
 
    ```bash
    cd /workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/resources && \
-   wget 'https://api.ngc.nvidia.com/v2/models/nvidia/isaac/dnn_stereo_disparity/versions/1.0.0/files/ess.etlt'
+   wget 'https://api.ngc.nvidia.com/v2/models/nvidia/isaac/dnn_stereo_disparity/versions/1.1.0/files/ess.etlt'
    ```
 
 6. Convert the encrypted model (`.etlt`) to a TensorRT engine plan:
@@ -302,6 +303,7 @@ Make sure that the ROS bag has a reasonable size and publish rate.
 
 | Date       | Changes                                    |
 | ---------- | ------------------------------------------ |
+| 2023-05-25 | Upgraded model (1.1.0)                     |
 | 2023-04-05 | Source available GXF extensions            |
 | 2022-10-19 | Updated OSS licensing                      |
 | 2022-08-31 | Update to be compatible with JetPack 5.0.2 |

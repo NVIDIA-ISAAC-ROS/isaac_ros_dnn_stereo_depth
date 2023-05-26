@@ -22,6 +22,7 @@
 
 namespace cvcore { namespace tensor_ops {
 
+// TODO: Add doxygen style comments for each of the error codes
 enum class TensorOpsErrorCode : std::int32_t
 {
     SUCCESS = 0,

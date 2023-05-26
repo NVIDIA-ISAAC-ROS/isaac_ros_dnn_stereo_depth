@@ -35,15 +35,36 @@ find_package(TENSORRT)
 
 # Create extension
 add_library(gxf_cvcore_ess SHARED
+  TensorOps.cpp
   ESS.cpp
   extensions/ess/ESS.hpp
-  ESSRegistry.cpp
 
+  extensions/tensor_ops/CameraModel.cpp
+  extensions/tensor_ops/CameraModel.hpp
+  extensions/tensor_ops/ConvertColorFormat.cpp
+  extensions/tensor_ops/ConvertColorFormat.hpp
+  extensions/tensor_ops/CropAndResize.cpp
+  extensions/tensor_ops/CropAndResize.hpp
+  extensions/tensor_ops/Frame3D.cpp
+  extensions/tensor_ops/Frame3D.hpp
   extensions/tensor_ops/ImageAdapter.cpp
   extensions/tensor_ops/ImageAdapter.hpp
   extensions/tensor_ops/ImageUtils.cpp
   extensions/tensor_ops/ImageUtils.hpp
-
+  extensions/tensor_ops/InterleavedToPlanar.cpp
+  extensions/tensor_ops/InterleavedToPlanar.hpp
+  extensions/tensor_ops/Normalize.cpp
+  extensions/tensor_ops/Normalize.hpp
+  extensions/tensor_ops/Reshape.cpp
+  extensions/tensor_ops/Reshape.hpp
+  extensions/tensor_ops/Resize.cpp
+  extensions/tensor_ops/Resize.hpp
+  extensions/tensor_ops/TensorOperator.cpp
+  extensions/tensor_ops/TensorOperator.hpp
+  extensions/tensor_ops/TensorStream.cpp
+  extensions/tensor_ops/TensorStream.hpp
+  extensions/tensor_ops/Undistort.cpp
+  extensions/tensor_ops/Undistort.hpp
   extensions/tensor_ops/detail/ImageAdapterTensorImpl.cpp
   extensions/tensor_ops/detail/ImageAdapterTensorImpl.hpp
   extensions/tensor_ops/detail/ImageAdapterVideoBufferImpl.cpp

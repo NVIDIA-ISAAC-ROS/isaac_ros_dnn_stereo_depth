@@ -101,7 +101,7 @@ std::error_code CreateVPIImageWrapperImpl(VPIImage &vpiImg, VPIImageData &imgdat
     return make_error_code(vpiStatus);
 }
 
-// helper function to wrap VPI image for planar image types
+// helper function to wrap VPI image for planar image types (TODO: not supported in vpi so far)
 template<ImageType T, typename std::enable_if<IsPlanarImage<T>::value>::type * = nullptr>
 std::error_code CreateVPIImageWrapperImpl(VPIImage &vpiImg, VPIImageData &imgdata, const Image<T> &cvcoreImage, VPIBackend backend)
 {
@@ -224,6 +224,7 @@ std::error_code DestroyVPIImageWrapper(VPIImage &image, VPIImageData &imageWrap)
 }
 std::error_code VPITensorStream::Status() noexcept
 {
+    // TODO Needs to be updated for supporting non blocking function calls.
     return ErrorCode::SUCCESS;
 }
 
