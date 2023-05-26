@@ -180,7 +180,7 @@ void DBScan::doClusterAndMerge(Array<BBox> &input, Array<BBox> &output, BBoxMerg
     doCluster(input, clusters);
     output.setSize(m_numClusters);
 
-    // merge bboxes based on different modes
+    // merge bboxes based on different modes (TODO: might add mininum/average in the future)
     if (type == MAXIMUM)
     {
         MergeMaximumBBoxes(input, clusters, output);

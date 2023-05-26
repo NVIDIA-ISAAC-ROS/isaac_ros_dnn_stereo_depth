@@ -66,6 +66,7 @@ std::string GetCPUName()
 #else
 std::string GetCPUName()
 {
+    // TODO: this will only work on linux platform
     std::ifstream cpuInfo("/proc/cpuinfo");
     if (!cpuInfo.good())
     {

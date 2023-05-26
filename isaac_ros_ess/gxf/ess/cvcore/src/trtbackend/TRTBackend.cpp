@@ -458,6 +458,7 @@ void TRTImpl::loadFromMemoryPointer(void *engine)
 
 void TRTImpl::setupIO(int batchSize)
 {
+    // @TODO: use getBindingDimensions to avoid re-setting the IO.
     m_bindingsCount = m_inferenceEngine->getNbBindings();
     for (int i = 0; i < m_bindingsCount; i++)
     {
@@ -542,6 +543,7 @@ void TRTBackend::infer(void **buffer)
 
 void TRTBackend::infer(void **buffer, int batchSize, cudaStream_t stream)
 {
+    //@TODO: fix kMin, kOpt, kMax batch size in SetupProfile() call and then add a check here.
     m_pImpl->setupIO(batchSize);
 
     bool success = true;
