@@ -25,7 +25,7 @@ In addition to supporting the ROS Bag input type, the `isaac_ros_ess_visualizer.
     ros2 run isaac_ros_ess isaac_ros_ess_visualizer.py --raw_inputs
     ```
 
-    <div align="center"><img src="../resources/output_raw.png" width="600px" title="Output of ESS Disparity Node."/></div>
+    <div align="center"><img src="../resources/output_raw.jpeg" width="600px" title="Output of ESS Disparity Node."/></div>
 
 5. Try your own examples:
 
