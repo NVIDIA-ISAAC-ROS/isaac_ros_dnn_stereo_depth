@@ -105,40 +105,31 @@ To simplify development, we strongly recommend leveraging the Isaac ROS Dev Dock
 
 1. Set up your development environment by following the instructions [here](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_common/blob/main/docs/dev-env-setup.md).
 
-2. Clone this repository and its dependencies under `~/workspaces/isaac_ros-dev/src`:
+    > Note: `${ISAAC_ROS_WS}` is defined to point to either `/ssd/workspaces/isaac_ros-dev/` or `~/workspaces/isaac_ros-dev/`.
+
+2. Clone this repository and its dependencies under `${ISAAC_ROS_WS}/src`.
 
    ```bash
-   mkdir -p ~/workspaces/isaac_ros-dev/src && cd ~/workspaces/isaac_ros-dev/src
-   ```
-
-   ```bash
+   cd ${ISAAC_ROS_WS}/src
    git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_common
-   ```
-
-   ```bash
    git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_nitros
-   ```
-
-   ```bash
    git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_image_pipeline
-   ```
-
-   ```bash
    git clone https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_dnn_stereo_disparity
    ```
 
 3. Pull down a ROS Bag of sample data:
 
    ```bash
-   cd ~/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity && \
+   cd ${ISAAC_ROS_WS}/src/isaac_ros_dnn_stereo_disparity && \
    git lfs pull -X "" -I "resources/rosbags/ess_rosbag"
    ```
 
-4. Launch the Docker container using the `run_dev.sh` script:
+4.  \[Terminal 1\] Launch the Docker container
 
-   ```bash
-   cd ~/workspaces/isaac_ros-dev/src/isaac_ros_common && ./scripts/run_dev.sh
-   ```
+    ```bash
+    cd ${ISAAC_ROS_WS}/src/isaac_ros_common && \
+      ./scripts/run_dev.sh ${ISAAC_ROS_WS}
+    ```
 
 5. Download the pre-trained ESS model from the [ESS model page](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/dnn_stereo_disparity):
 
@@ -155,13 +146,11 @@ To simplify development, we strongly recommend leveraging the Isaac ROS Dev Dock
 
 7. Build and source the workspace:
 
-   ```bash
-   cd /workspaces/isaac_ros-dev && \
-     colcon build && \
-     source install/setup.bash
-   ```
-
-   **Note**: We recommend rebuilding the package each time the source files are edited. Before rebuilding, first clean the workspace by running `rm -r build install log`.
+    ```bash
+    cd /workspaces/isaac_ros-dev && \
+      colcon build --symlink-install && \
+      source install/setup.bash
+    ```
 
 8. (Optional) Run tests to verify complete and correct installation:
 
@@ -178,14 +167,14 @@ To simplify development, we strongly recommend leveraging the Isaac ROS Dev Dock
 10. Open a **second terminal** and attach to the container:
 
     ```bash
-    cd ~/workspaces/isaac_ros-dev/src/isaac_ros_common && \
-      ./scripts/run_dev.sh && \
-      source install/setup.bash
+    cd ${ISAAC_ROS_WS}/src/isaac_ros_common && \
+      ./scripts/run_dev.sh ${ISAAC_ROS_WS}
     ```
 
 11. In the **second terminal**, visualize and validate the output of the package:
 
     ```bash
+    source /workspaces/isaac_ros-dev/install/setup.bash && \
     ros2 run isaac_ros_ess isaac_ros_ess_visualizer.py --enable_rosbag
     ```
 
