@@ -15,7 +15,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.23.2)
+cmake_minimum_required(VERSION 3.22.1)
 project(isaac_ros_ess LANGUAGES C CXX)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -28,13 +28,15 @@ ament_auto_find_build_dependencies()
 # isaac_ros_ess_node
 ament_auto_add_library(isaac_ros_ess_node SHARED src/ess_disparity_node.cpp)
 target_link_libraries(isaac_ros_ess_node)
-rclcpp_components_register_nodes(isaac_ros_ess_node "nvidia::isaac_ros::dnn_stereo_disparity::ESSDisparityNode")
-set(node_plugins "${node_plugins}nvidia::isaac_ros::dnn_stereo_disparity::ESSDisparityNode;$<TARGET_FILE:isaac_ros_ess_node>\n")
+rclcpp_components_register_nodes(isaac_ros_ess_node "nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode")
+set(node_plugins "${node_plugins}nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode;$<TARGET_FILE:isaac_ros_ess_node>\n")
 
 ### Install ESS extension built from source
 
 add_subdirectory(gxf/ess)
 install(TARGETS gxf_cvcore_ess DESTINATION share/${PROJECT_NAME}/gxf/lib/ess)
+add_subdirectory(gxf/thresholder)
+install(TARGETS gxf_thresholder DESTINATION share/${PROJECT_NAME}/gxf/lib/thresholder)
 
 ### End extensions
 
@@ -45,8 +47,15 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
+
+  # The FindPythonInterp and FindPythonLibs modules are removed
+  if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+  endif()
+
   find_package(launch_testing_ament_cmake REQUIRED)
   add_launch_test(test/isaac_ros_ess_test.py TIMEOUT "300")
+  add_launch_test(test/isaac_ros_ess_test_1_16HD_model.py TIMEOUT "300")
 endif()
 
 ament_auto_package(INSTALL_TO_SHARE launch config)

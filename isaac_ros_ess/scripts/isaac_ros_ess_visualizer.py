@@ -43,19 +43,19 @@ def get_args():
     parser.add_argument('--enable_rosbag', action='store_true', help='Save output or display it',
                         default=False)
     parser.add_argument('--rosbag_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/'
+                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
                                 'resources/rosbags/ess_rosbag',
                         help='Absolute path to your rosbag.')
     parser.add_argument('--left_image_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/'
+                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
                                 'resources/examples/left.png',
                         help='Absolute path your left image.')
     parser.add_argument('--right_image_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/'
+                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
                                 'resources/examples/right.png',
                         help='Absolute path your right image.')
     parser.add_argument('--camera_info_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_disparity/'
+                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
                                 'resources/examples/camera.json',
                         help='Absolute path your camera info json file.')
     args = parser.parse_args()

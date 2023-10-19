@@ -28,14 +28,22 @@ def generate_launch_description():
             'engine_file_path',
             default_value='',
             description='The absolute path to the ESS engine plan.'),
+        DeclareLaunchArgument(
+            'threshold',
+            default_value='0.9',
+            description='Threshold value ranges between 0.0 and 1.0 '
+                        'for filtering disparity with confidence.'),
     ]
     engine_file_path = LaunchConfiguration('engine_file_path')
+    threshold = LaunchConfiguration('threshold')
 
     disparity_node = ComposableNode(
         name='disparity',
         package='isaac_ros_ess',
-        plugin='nvidia::isaac_ros::dnn_stereo_disparity::ESSDisparityNode',
-        parameters=[{'engine_file_path': engine_file_path}])
+        plugin='nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode',
+        parameters=[{'engine_file_path': engine_file_path,
+                    'threshold': threshold}]
+    )
 
     container = ComposableNodeContainer(
         name='disparity_container',

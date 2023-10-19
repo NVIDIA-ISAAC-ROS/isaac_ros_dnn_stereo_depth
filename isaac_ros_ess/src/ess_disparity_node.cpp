@@ -33,7 +33,7 @@ namespace nvidia
 {
 namespace isaac_ros
 {
-namespace dnn_stereo_disparity
+namespace dnn_stereo_depth
 {
 
 using nvidia::gxf::optimizer::GraphIOGroupSupportedDataTypesInfoList;
@@ -65,7 +65,10 @@ const std::vector<std::pair<std::string, std::string>> EXTENSIONS = {
   {"isaac_ros_gxf", "gxf/lib/cuda/libgxf_cuda.so"},
   {"isaac_ros_gxf", "gxf/lib/serialization/libgxf_serialization.so"},
   {"isaac_ros_gxf", "gxf/lib/libgxf_synchronization.so"},
-  {"isaac_ros_stereo_image_proc", "gxf/lib/sgm_disparity/libgxf_disparity_extension.so"},
+  {"isaac_ros_ess", "gxf/lib/thresholder/libgxf_thresholder.so"},
+  {"isaac_ros_gxf", "gxf/lib/libgxf_isaac_messages.so"},
+  {"isaac_ros_image_proc", "gxf/lib/image_proc/libgxf_tensorops.so"},
+  {"isaac_ros_stereo_image_proc", "gxf/lib/sgm_disparity/libgxf_sgm.so"},
   {"isaac_ros_ess", "gxf/lib/ess/libgxf_cvcore_ess.so"}
 };
 const std::vector<std::string> PRESET_EXTENSION_SPEC_NAMES = {
@@ -133,11 +136,13 @@ ESSDisparityNode::ESSDisparityNode(const rclcpp::NodeOptions & options)
   input_layer_width_(declare_parameter<int>("input_layer_width", 960)),
   input_layer_height_(declare_parameter<int>("input_layer_height", 576)),
   model_input_type_(declare_parameter<std::string>("model_input_type", "RGB_U8")),
+  onnx_file_path_(declare_parameter<std::string>("onnx_file_path", "")),
   engine_file_path_(declare_parameter<std::string>("engine_file_path", "")),
   input_layers_name_(declare_parameter<std::vector<std::string>>(
       "input_layers_name", {"input_left", "input_right"})),
   output_layers_name_(declare_parameter<std::vector<std::string>>(
-      "output_layers_name", {"output_left"}))
+      "output_layers_name", {"output_left", "output_conf"})),
+  threshold_(declare_parameter<float>("threshold", 0.9))
 {
   RCLCPP_DEBUG(get_logger(), "[ESSDisparityNode] Initializing ESSDisparityNode.");
 
@@ -169,17 +174,21 @@ void ESSDisparityNode::postLoadGraphCallback()
 {
   // Forward ESSDisparityNode parameters
   getNitrosContext().setParameterInt32(
-    "ess", "nvidia::cvcore::ESS", "input_layer_width", input_layer_width_);
+    "ess", "nvidia::isaac::ESSInference", "input_layer_width", input_layer_width_);
   getNitrosContext().setParameterInt32(
-    "ess", "nvidia::cvcore::ESS", "input_layer_height", input_layer_height_);
+    "ess", "nvidia::isaac::ESSInference", "input_layer_height", input_layer_height_);
   getNitrosContext().setParameterStr(
-    "ess", "nvidia::cvcore::ESS", "model_input_type", model_input_type_);
+    "ess", "nvidia::isaac::ESSInference", "model_input_type", model_input_type_);
   getNitrosContext().setParameterStr(
-    "ess", "nvidia::cvcore::ESS", "engine_file_path", engine_file_path_);
+    "ess", "nvidia::isaac::ESSInference", "onnx_file_path", onnx_file_path_);
+  getNitrosContext().setParameterStr(
+    "ess", "nvidia::isaac::ESSInference", "engine_file_path", engine_file_path_);
   getNitrosContext().setParameter1DStrVector(
-    "ess", "nvidia::cvcore::ESS", "input_layers_name", input_layers_name_);
+    "ess", "nvidia::isaac::ESSInference", "input_layers_name", input_layers_name_);
   getNitrosContext().setParameter1DStrVector(
-    "ess", "nvidia::cvcore::ESS", "output_layers_name", output_layers_name_);
+    "ess", "nvidia::isaac::ESSInference", "output_layers_name", output_layers_name_);
+  getNitrosContext().setParameterFloat32(
+    "disparity_thresholder", "nvidia::isaac::VideoBufferThresholder", "threshold", threshold_);
 
   RCLCPP_INFO(
     get_logger(), "[ESSDisparityNode] Setting engine_file_path: %s.", engine_file_path_.c_str());
@@ -187,9 +196,9 @@ void ESSDisparityNode::postLoadGraphCallback()
 
 ESSDisparityNode::~ESSDisparityNode() {}
 
-}  // namespace dnn_stereo_disparity
+}  // namespace dnn_stereo_depth
 }  // namespace isaac_ros
 }  // namespace nvidia
 
 // Register as a component
-RCLCPP_COMPONENTS_REGISTER_NODE(nvidia::isaac_ros::dnn_stereo_disparity::ESSDisparityNode)
+RCLCPP_COMPONENTS_REGISTER_NODE(nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode)
