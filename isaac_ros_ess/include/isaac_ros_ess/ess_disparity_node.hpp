@@ -31,7 +31,7 @@ namespace nvidia
 {
 namespace isaac_ros
 {
-namespace dnn_stereo_disparity
+namespace dnn_stereo_depth
 {
 
 class ESSDisparityNode : public nitros::NitrosNode
@@ -53,12 +53,14 @@ private:
   const int input_layer_width_;
   const int input_layer_height_;
   const std::string model_input_type_;
+  const std::string onnx_file_path_;
   const std::string engine_file_path_;
   const std::vector<std::string> input_layers_name_;
   const std::vector<std::string> output_layers_name_;
+  const float threshold_;
 };
 
-}  // namespace dnn_stereo_disparity
+}  // namespace dnn_stereo_depth
 }  // namespace isaac_ros
 }  // namespace nvidia
 

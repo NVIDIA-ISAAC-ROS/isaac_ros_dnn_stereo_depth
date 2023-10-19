@@ -23,7 +23,8 @@ endif()
 
 # Dependencies
 find_package(CUDAToolkit)
-include(YamlCpp)
+find_package(yaml-cpp)
+find_package(isaac_ros_image_proc REQUIRED)
 find_package(GXF ${ISAAC_ROS_GXF_VERSION} MODULE REQUIRED
     COMPONENTS
     core
@@ -33,118 +34,51 @@ find_package(GXF ${ISAAC_ROS_GXF_VERSION} MODULE REQUIRED
 )
 find_package(TENSORRT)
 
+set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+
 # Create extension
 add_library(gxf_cvcore_ess SHARED
-  TensorOps.cpp
-  ESS.cpp
-  extensions/ess/ESS.hpp
+  extensions/ess/ess.cpp
+  extensions/ess/components/ess_inference.cpp
+  extensions/ess/components/ess_inference.hpp
 
-  extensions/tensor_ops/CameraModel.cpp
-  extensions/tensor_ops/CameraModel.hpp
-  extensions/tensor_ops/ConvertColorFormat.cpp
-  extensions/tensor_ops/ConvertColorFormat.hpp
-  extensions/tensor_ops/CropAndResize.cpp
-  extensions/tensor_ops/CropAndResize.hpp
-  extensions/tensor_ops/Frame3D.cpp
-  extensions/tensor_ops/Frame3D.hpp
-  extensions/tensor_ops/ImageAdapter.cpp
-  extensions/tensor_ops/ImageAdapter.hpp
-  extensions/tensor_ops/ImageUtils.cpp
-  extensions/tensor_ops/ImageUtils.hpp
-  extensions/tensor_ops/InterleavedToPlanar.cpp
-  extensions/tensor_ops/InterleavedToPlanar.hpp
-  extensions/tensor_ops/Normalize.cpp
-  extensions/tensor_ops/Normalize.hpp
-  extensions/tensor_ops/Reshape.cpp
-  extensions/tensor_ops/Reshape.hpp
-  extensions/tensor_ops/Resize.cpp
-  extensions/tensor_ops/Resize.hpp
-  extensions/tensor_ops/TensorOperator.cpp
-  extensions/tensor_ops/TensorOperator.hpp
-  extensions/tensor_ops/TensorStream.cpp
-  extensions/tensor_ops/TensorStream.hpp
-  extensions/tensor_ops/Undistort.cpp
-  extensions/tensor_ops/Undistort.hpp
-  extensions/tensor_ops/detail/ImageAdapterTensorImpl.cpp
-  extensions/tensor_ops/detail/ImageAdapterTensorImpl.hpp
-  extensions/tensor_ops/detail/ImageAdapterVideoBufferImpl.cpp
-  extensions/tensor_ops/detail/ImageAdapterVideoBufferImpl.hpp
+  extensions/ess/inference/ESS.cpp
+  extensions/ess/inference/ESS.h
+  extensions/ess/inference/ESSPostProcess.cpp
+  extensions/ess/inference/ESSPreProcess.cpp
 )
+target_include_directories(gxf_cvcore_ess PRIVATE ${isaac_ros_image_proc_INCLUDE_DIRS})
 
-set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
-target_include_directories(gxf_cvcore_ess PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/cvcore/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/3dv/include)
-
-add_library(cvcore_ess STATIC
-  # Tensorops
-  cvcore/src/tensor_ops/ArithmeticOperations.cpp
-  cvcore/src/tensor_ops/BBoxUtils.cpp
-  cvcore/src/tensor_ops/ColorConversions.cpp
-  cvcore/src/tensor_ops/DBScan.cpp
-  cvcore/src/tensor_ops/Errors.cpp
-  cvcore/src/tensor_ops/Filters.cpp
-  cvcore/src/tensor_ops/Filters.h
-  cvcore/src/tensor_ops/FusedOperations.cpp
-  cvcore/src/tensor_ops/GeometryTransforms.cpp
-  cvcore/src/tensor_ops/IImageWarp.cpp
-  cvcore/src/tensor_ops/NppUtils.cpp
-  cvcore/src/tensor_ops/NppUtils.h
-  cvcore/src/tensor_ops/OneEuroFilter.cpp
-  cvcore/src/tensor_ops/TensorOperators.cpp
-
-  # Core
-  cvcore/src/core/cvcore/Array.cpp
-  cvcore/src/core/cvcore/Dummy.cu
-  cvcore/src/core/cvcore/MathTypes.cpp
-  cvcore/src/core/cvcore/Tensor.cpp
-  cvcore/src/core/utility/CVError.cpp
-  cvcore/src/core/utility/Instrumentation.cpp
-  cvcore/src/core/utility/Memory.cpp
-  cvcore/src/core/utility/ProfileUtils.cpp
-
+add_library(corelib STATIC
   # Inferencer (ESS only)
-  cvcore/src/inferencer/tensorrt/TensorRTInferencer.cpp
-  cvcore/src/inferencer/Inferencer.cpp
-  cvcore/src/inferencer/Errors.cpp
-  cvcore/src/inferencer/tensorrt/TensorRTUtils.h
-  cvcore/src/inferencer/tensorrt/TensorRTUtils.cpp
-  cvcore/src/inferencer/tensorrt/TensorRTInferencer.h
+  gems/dnn_inferencer/inferencer/TensorRTInferencer.cpp
+  gems/dnn_inferencer/inferencer/TensorRTUtils.h
+  gems/dnn_inferencer/inferencer/TensorRTUtils.cpp
+  gems/dnn_inferencer/inferencer/TensorRTInferencer.h
+  gems/dnn_inferencer/inferencer/Inferencer.cpp
+  gems/dnn_inferencer/inferencer/Errors.cpp
+)
+target_include_directories(corelib PRIVATE ${isaac_ros_image_proc_INCLUDE_DIRS})
 
-  # TRTBackend
-  cvcore/src/trtbackend/TRTBackend.cpp
-)
-
-target_include_directories(cvcore_ess PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/cvcore/include)
-target_compile_options(cvcore_ess PUBLIC -fPIC)
-target_link_libraries(cvcore_ess PUBLIC
-  CUDA::cudart
-  CUDA::nppc
-  CUDA::nppial
-  CUDA::nppicc
-  CUDA::nppidei
-  CUDA::nppif
-  CUDA::nppig
-  CUDA::nppisu
-  TENSORRT::nvinfer
-)
-
-add_library(ess_3dv STATIC
-  3dv/src/ESS.cpp
-  3dv/src/ESSPostProcess.cpp
-  3dv/src/ESSPreProcess.cpp
-)
-target_include_directories(ess_3dv PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/3dv/include)
-target_compile_options(ess_3dv PUBLIC -fPIC)
-target_link_libraries(ess_3dv PUBLIC
-  cvcore_ess
-)
-target_link_libraries(gxf_cvcore_ess
-  PUBLIC
+target_link_libraries(corelib PUBLIC
+    GXF::core
     GXF::cuda
     GXF::multimedia
+    CUDA::cudart
+    CUDA::nppc
+    CUDA::nppial
+    CUDA::nppicc
+    CUDA::nppidei
+    CUDA::nppif
+    CUDA::nppig
+    CUDA::nppisu
+    TENSORRT::nvinfer
     yaml-cpp
-  PRIVATE
-    cvcore_ess
-    ess_3dv
+)
+
+target_compile_options(gxf_cvcore_ess PUBLIC -fPIC)
+
+target_link_libraries(gxf_cvcore_ess
+    corelib
+    isaac_ros_image_proc::gxf_tensorops
 )

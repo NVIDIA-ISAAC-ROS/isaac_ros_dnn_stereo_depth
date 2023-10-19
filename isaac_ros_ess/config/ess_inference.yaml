@@ -129,7 +129,7 @@ components:
     receiver: data_receiver_right
     min_size: 1
 - name: adapter
-  type: nvidia::cvcore::tensor_ops::ImageAdapter
+  type: nvidia::isaac::tensor_ops::ImageAdapter
   parameters:
     message_type: VideoBuffer
 - name: data_transmitter
@@ -137,6 +137,15 @@ components:
   parameters:
     capacity: 12
     policy: 0
+- name: confidence_output
+  type: nvidia::gxf::DoubleBufferTransmitter
+  parameters:
+    capacity: 12
+    policy: 0
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: confidence_output
+    min_size: 1
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: data_transmitter
@@ -147,26 +156,72 @@ components:
     storage_type: 1
     block_size: 18432000
     num_blocks: 40
-- type: nvidia::cvcore::ESS
+- type: nvidia::isaac::ESSInference
   parameters:
-    output_name: disparity
+    output_name: frame
     pool: pool
     left_image_receiver: data_receiver_left
     right_image_receiver: data_receiver_right
     output_transmitter: data_transmitter
+    confidence_transmitter: confidence_output
     output_adapter: adapter
     image_type: RGB_U8
     pixel_mean: [-128, -128, -128]
     normalization: [0.00392156862, 0.00392156862, 0.00392156862]
     standard_deviation: [0.5, 0.5, 0.5]
     max_batch_size: 1
-    input_layer_width: 960
-    input_layer_height: 576
     model_input_type: RGB_U8
+    onnx_file_path: onnx_file_path_placeholder
     engine_file_path: engine_file_path_placeholder
     input_layers_name: [input_left, input_right]
-    output_layers_name: [output_left]
+    output_layers_name: [output_left, output_conf]
     preprocess_type: RESIZE
+---
+name: disparity_thresholder
+components:
+- name: image_input
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 12
+    policy: 0
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: image_input
+    min_size: 1
+- name: confidence_input
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 12
+    policy: 0
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: confidence_input
+    min_size: 1
+- name: masked_output
+  type: nvidia::gxf::DoubleBufferTransmitter
+  parameters:
+    capacity: 12
+    policy: 0
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: masked_output
+    min_size: 1
+- name: allocator
+  type: nvidia::gxf::BlockMemoryPool
+  parameters:
+    storage_type: 1
+    block_size: 9216000
+    num_blocks: 40
+- name: image_thresholder
+  type: nvidia::isaac::VideoBufferThresholder
+  parameters:
+    image_input: image_input
+    video_buffer_name: frame
+    mask_input: confidence_input
+    masked_output: masked_output
+    allocator: allocator
+    threshold: 0.9
+    fill_value_float: -1.0
 ---
 name: disparity_compositor
 components:
@@ -212,7 +267,7 @@ components:
     storage_type: 1
     block_size: 18432000
     num_blocks: 40
-- type: nvidia::isaac_ros::DisparityCompositor
+- type: nvidia::isaac::DisparityCompositor
   parameters:
     left_camera_model_receiver: left_cam_receiver
     right_camera_model_receiver: right_cam_receiver
@@ -258,6 +313,14 @@ components:
 - type: nvidia::gxf::Connection
   parameters:
     source: ess/data_transmitter
+    target: disparity_thresholder/image_input
+- type: nvidia::gxf::Connection
+  parameters:
+    source: ess/confidence_output
+    target: disparity_thresholder/confidence_input
+- type: nvidia::gxf::Connection
+  parameters:
+    source: disparity_thresholder/masked_output
     target: disparity_compositor/disparity_in
 - type: nvidia::gxf::Connection
   parameters:

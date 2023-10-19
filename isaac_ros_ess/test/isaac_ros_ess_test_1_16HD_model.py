@@ -34,12 +34,12 @@ from stereo_msgs.msg import DisparityImage
 @pytest.mark.rostest
 def generate_test_description():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    engine_file_path = '/tmp/dummy_model.engine'
+    engine_file_path = '/tmp/dummy_model_480x288.engine'
     if not os.path.isfile(engine_file_path):
         args = [
             '/usr/src/tensorrt/bin/trtexec',
             f'--saveEngine={engine_file_path}',
-            f'--onnx={dir_path}/dummy_model.onnx'
+            f'--onnx={dir_path}/dummy_model_480x288.onnx'
         ]
         print('Generating model engine file by command: ', ' '.join(args))
         result = subprocess.run(
@@ -78,10 +78,10 @@ class IsaacROSDisparityTest(IsaacROSBaseTest):
     IMAGE_HEIGHT = 1080
     IMAGE_WIDTH = 1920
     # disparity output dimension fixed at 960x576
-    ESS_OUTPUT_HEIGHT = 576
-    ESS_OUTPUT_WIDTH = 960
+    ESS_OUTPUT_HEIGHT = 288
+    ESS_OUTPUT_WIDTH = 480
     TIMEOUT = 10
-    ENGINE_FILE_PATH = '/tmp/dummy_model.engine'
+    ENGINE_FILE_PATH = '/tmp/dummy_model_480x288.engine'
     CAMERA_INFO_PATH = os.path.dirname(
         os.path.realpath(__file__)) + '/camera_info.json'
 

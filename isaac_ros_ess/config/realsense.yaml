@@ -7,7 +7,7 @@ rgb_camera:
 color_qos: "SENSOR_DATA"
 
 depth_module:
-  profile: '640x480x60'
+  profile: '1280x720x30'
   emitter_enabled: 0
   emitter_on_off: false
 depth_qos: "SENSOR_DATA"
