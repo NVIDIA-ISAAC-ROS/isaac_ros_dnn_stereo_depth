@@ -176,6 +176,10 @@ components:
     input_layers_name: [input_left, input_right]
     output_layers_name: [output_left, output_conf]
     preprocess_type: RESIZE
+- type: nvidia::gxf::MemoryAvailableSchedulingTerm
+  parameters:
+    allocator: pool
+    min_blocks: 1
 ---
 name: disparity_thresholder
 components:
@@ -222,6 +226,10 @@ components:
     allocator: allocator
     threshold: 0.9
     fill_value_float: -1.0
+- type: nvidia::gxf::MemoryAvailableSchedulingTerm
+  parameters:
+    allocator: allocator
+    min_blocks: 1
 ---
 name: disparity_compositor
 components:
@@ -275,6 +283,10 @@ components:
     output_transmitter: data_transmitter
     min_disparity: 0
     max_disparity: -1
+- type: nvidia::gxf::MemoryAvailableSchedulingTerm
+  parameters:
+    allocator: pool
+    min_blocks: 1
 ---
 name: sink
 components:
