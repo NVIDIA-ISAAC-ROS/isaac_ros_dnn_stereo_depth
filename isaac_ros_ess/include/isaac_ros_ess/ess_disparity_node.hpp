@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-// Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ public:
   ESSDisparityNode & operator=(const ESSDisparityNode &) = delete;
 
   // The callback for submitting parameters to the node's graph
+  void preLoadGraphCallback() override;
   void postLoadGraphCallback() override;
 
 private:
@@ -58,6 +59,7 @@ private:
   const std::vector<std::string> input_layers_name_;
   const std::vector<std::string> output_layers_name_;
   const float threshold_;
+  const int throttler_skip_;
 };
 
 }  // namespace dnn_stereo_depth

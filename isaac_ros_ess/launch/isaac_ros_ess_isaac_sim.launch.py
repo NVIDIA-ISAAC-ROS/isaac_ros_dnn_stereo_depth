@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2021-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2021-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -77,9 +77,12 @@ def generate_launch_description():
         package='isaac_ros_ess',
         plugin='nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode',
         parameters=[{'engine_file_path': engine_file_path,
-                     'threshold': threshold}],
+                     'threshold': threshold,
+                     'input_layer_width': 960,
+                     'input_layer_height': 576}],
         remappings=[('left/image_rect', 'front_stereo_camera/left_rgb/image_resize'),
-                    ('left/camera_info', 'front_stereo_camera/left_rgb/camerainfo_resize'),
+                    ('left/camera_info',
+                     'front_stereo_camera/left_rgb/camerainfo_resize'),
                     ('right/image_rect', 'front_stereo_camera/right_rgb/image_resize'),
                     ('right/camera_info', 'front_stereo_camera/right_rgb/camerainfo_resize')])
 
@@ -91,7 +94,8 @@ def generate_launch_description():
             'unit_scaling': 1.0
         }],
         remappings=[('left/image_rect_color', 'front_stereo_camera/left_rgb/image_resize'),
-                    ('left/camera_info', 'front_stereo_camera/left_rgb/camerainfo_resize'),
+                    ('left/camera_info',
+                     'front_stereo_camera/left_rgb/camerainfo_resize'),
                     ('right/camera_info', 'front_stereo_camera/right_rgb/camerainfo_resize')])
 
     container = ComposableNodeContainer(
