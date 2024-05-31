@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ def generate_launch_description():
             description='The absolute path to the ESS engine plan.'),
         DeclareLaunchArgument(
             'threshold',
-            default_value='0.9',
+            default_value='0.35',
             description='Threshold value ranges between 0.0 and 1.0 '
                         'for filtering disparity with confidence.'),
     ]
@@ -46,7 +46,9 @@ def generate_launch_description():
         package='isaac_ros_ess',
         plugin='nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode',
         parameters=[{'engine_file_path': engine_file_path,
-                     'threshold': threshold}],
+                     'threshold': threshold,
+                     'input_layer_width': 960,
+                     'input_layer_height': 576}],
         remappings=[
             ('left/camera_info', 'infra1/camera_info_resize'),
             ('left/image_rect', 'infra1/image_rect_raw_resize'),
@@ -61,6 +63,8 @@ def generate_launch_description():
         name='image_format_node_left',
         parameters=[{
                 'encoding_desired': 'rgb8',
+                'image_width': 1280,
+                'image_height': 720
         }],
         remappings=[
             ('image_raw', 'infra1/image_rect_raw_mono'),
@@ -73,6 +77,8 @@ def generate_launch_description():
         name='image_format_node_right',
         parameters=[{
                 'encoding_desired': 'rgb8',
+                'image_width': 1280,
+                'image_height': 720
         }],
         remappings=[
             ('image_raw', 'infra2/image_rect_raw_mono'),

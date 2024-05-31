@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,35 +18,45 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(isaac_ros_ess LANGUAGES C CXX)
 
+execute_process(COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE)
+message( STATUS "Architecture: ${ARCHITECTURE}" )
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  if(${ARCHITECTURE} STREQUAL "aarch64")
+    add_compile_options(-Wall -Wextra -Wpedantic -DROS_ARCH_AARCH64)
+  elseif(${ARCHITECTURE} STREQUAL "x86_64")
+    add_compile_options(-Wall -Wextra -Wpedantic -DROS_ARCH_X86_64)
+  endif()
 endif()
 
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 # isaac_ros_ess_node
-ament_auto_add_library(isaac_ros_ess_node SHARED src/ess_disparity_node.cpp)
-target_link_libraries(isaac_ros_ess_node)
-rclcpp_components_register_nodes(isaac_ros_ess_node "nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode")
-set(node_plugins "${node_plugins}nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode;$<TARGET_FILE:isaac_ros_ess_node>\n")
-
-### Install ESS extension built from source
-
-add_subdirectory(gxf/ess)
-install(TARGETS gxf_cvcore_ess DESTINATION share/${PROJECT_NAME}/gxf/lib/ess)
-add_subdirectory(gxf/thresholder)
-install(TARGETS gxf_thresholder DESTINATION share/${PROJECT_NAME}/gxf/lib/thresholder)
-
-### End extensions
+ament_auto_add_library(ess_disparity_node SHARED src/ess_disparity_node.cpp)
+rclcpp_components_register_nodes(ess_disparity_node "nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode")
+set(node_plugins "${node_plugins}nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode;$<TARGET_FILE:ess_disparity_node>\n")
+set_target_properties(ess_disparity_node PROPERTIES
+  BUILD_WITH_INSTALL_RPATH TRUE
+  BUILD_RPATH_USE_ORIGIN TRUE
+  INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Install visualizer python scripts
+ament_python_install_package(${PROJECT_NAME})
+install(PROGRAMS scripts/generate_engine.py DESTINATION lib/${PROJECT_NAME})
 install(PROGRAMS scripts/isaac_ros_ess_visualizer.py DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS scripts/isaac_ros_ess_depth_validation.py DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
+  # Gtest for disparity node
+  ament_add_gtest(ess_disparity_node_test test/ess_disparity_node_test.cpp)
+  target_link_libraries(ess_disparity_node_test ess_disparity_node)
+  target_include_directories(ess_disparity_node_test PUBLIC include/isaac_ros_ess/)
+  ament_target_dependencies(ess_disparity_node_test rclcpp)
+  ament_target_dependencies(ess_disparity_node_test isaac_ros_nitros)
 
   # The FindPythonInterp and FindPythonLibs modules are removed
   if(POLICY CMP0148)

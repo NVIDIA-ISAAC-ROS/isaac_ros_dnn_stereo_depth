@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,42 +20,26 @@ SPDX-License-Identifier: Apache-2.0
 
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>isaac_ros_ess</name>
+  <name>gxf_isaac_ess</name>
   <version>3.0.0</version>
-  <description>DNN Stereo Disparity Network for Isaac ROS</description>
+  <description>Disparity GXF extension.</description>
 
   <maintainer email="isaac-ros-maintainers@nvidia.com">Isaac ROS Maintainers</maintainer>
   <license>Apache-2.0</license>
   <url type="website">https://developer.nvidia.com/isaac-ros-gems/</url>
-  <author>Xutong Ren</author>
+  <author>CY Chen</author>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>rclcpp</depend>
-  <depend>rclcpp_components</depend>
-  <depend>isaac_ros_nitros</depend>
-  <depend>isaac_ros_nitros_camera_info_type</depend>
-  <depend>isaac_ros_nitros_disparity_image_type</depend>
-  <depend>isaac_ros_nitros_image_type</depend>
-  <depend>isaac_ros_image_proc</depend>
-  <depend>isaac_ros_stereo_image_proc</depend>
+  <depend>isaac_ros_common</depend>
+  <depend>isaac_ros_gxf</depend>
   <depend>gxf_isaac_messages</depend>
-  <depend>gxf_isaac_messages_throttler</depend>
-  <depend>isaac_ros_ess_models_install</depend>
-  
-  <build_depend>isaac_ros_common</build_depend>
+  <depend>gxf_isaac_tensorops</depend>
+
   <build_depend>gxf_isaac_gems</build_depend>
-
-
-  <exec_depend>gxf_isaac_ess</exec_depend>
-  <exec_depend>gxf_isaac_sgm</exec_depend>
-  <exec_depend>gxf_isaac_tensorops</exec_depend>
-  <exec_depend>gxf_isaac_video_buffer_utils</exec_depend>
-  <exec_depend>isaac_ros_test</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
-  <test_depend>ament_cmake_gtest</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

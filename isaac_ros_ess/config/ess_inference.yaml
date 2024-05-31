@@ -1,6 +1,6 @@
 %YAML 1.2
 # SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +21,7 @@ components:
 - name: left_image_receiver
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 2
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: left_image_receiver
@@ -30,8 +29,7 @@ components:
 - name: right_image_receiver
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 2
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: right_image_receiver
@@ -40,12 +38,10 @@ components:
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
     capacity: 1
-    policy: 0
 - name: left_cam_receiver
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 2
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: left_cam_receiver
@@ -53,29 +49,19 @@ components:
 - name: right_cam_receiver
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 2
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: right_cam_receiver
     min_size: 1
-- type: nvidia::isaac_ros::Synchronization
+- type: nvidia::gxf::Synchronization
   parameters:
-    left_image_input: left_image_receiver
-    right_image_input: right_image_receiver
-    left_cam_input: left_cam_receiver
-    right_cam_input: right_cam_receiver
-    left_image_output: left_image_transmitter
-    right_image_output: right_image_transmitter
-    left_cam_output: left_cam_transmitter
-    right_cam_output: right_cam_transmitter
     inputs: [left_image_receiver, right_image_receiver, left_cam_receiver, right_cam_receiver]
     outputs: [left_image_transmitter, right_image_transmitter, left_cam_transmitter, right_cam_transmitter]
 - name: left_image_transmitter
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: left_image_transmitter
@@ -84,7 +70,6 @@ components:
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: right_image_transmitter
@@ -93,7 +78,6 @@ components:
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: left_cam_transmitter
@@ -102,7 +86,6 @@ components:
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: right_cam_transmitter
@@ -114,7 +97,6 @@ components:
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: data_receiver_left
@@ -123,25 +105,18 @@ components:
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: data_receiver_right
     min_size: 1
-- name: adapter
-  type: nvidia::isaac::tensor_ops::ImageAdapter
-  parameters:
-    message_type: VideoBuffer
 - name: data_transmitter
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 1
 - name: confidence_output
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 1
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: confidence_output
@@ -154,8 +129,15 @@ components:
   type: nvidia::gxf::BlockMemoryPool
   parameters:
     storage_type: 1
-    block_size: 18432000
-    num_blocks: 40
+    block_size: 2211840
+    num_blocks: 4
+- name: cuda_stream
+  type: nvidia::gxf::CudaStreamPool
+  parameters:
+    stream_flags: 1
+    stream_priority: 0
+    reserved_size: 1
+    max_size: 1
 - type: nvidia::isaac::ESSInference
   parameters:
     output_name: frame
@@ -164,7 +146,6 @@ components:
     right_image_receiver: data_receiver_right
     output_transmitter: data_transmitter
     confidence_transmitter: confidence_output
-    output_adapter: adapter
     image_type: RGB_U8
     pixel_mean: [-128, -128, -128]
     normalization: [0.00392156862, 0.00392156862, 0.00392156862]
@@ -176,18 +157,18 @@ components:
     input_layers_name: [input_left, input_right]
     output_layers_name: [output_left, output_conf]
     preprocess_type: RESIZE
+    stream_pool: cuda_stream
 - type: nvidia::gxf::MemoryAvailableSchedulingTerm
   parameters:
     allocator: pool
-    min_blocks: 1
+    min_blocks: 2
 ---
 name: disparity_thresholder
 components:
 - name: image_input
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 1
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: image_input
@@ -195,8 +176,7 @@ components:
 - name: confidence_input
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 1
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: confidence_input
@@ -204,8 +184,7 @@ components:
 - name: masked_output
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
-    capacity: 12
-    policy: 0
+    capacity: 1
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: masked_output
@@ -214,8 +193,15 @@ components:
   type: nvidia::gxf::BlockMemoryPool
   parameters:
     storage_type: 1
-    block_size: 9216000
-    num_blocks: 40
+    block_size: 2211840
+    num_blocks: 2
+- name: cuda_stream
+  type: nvidia::gxf::CudaStreamPool
+  parameters:
+    stream_flags: 1
+    stream_priority: 0
+    reserved_size: 1
+    max_size: 1
 - name: image_thresholder
   type: nvidia::isaac::VideoBufferThresholder
   parameters:
@@ -224,8 +210,9 @@ components:
     mask_input: confidence_input
     masked_output: masked_output
     allocator: allocator
-    threshold: 0.9
+    threshold: 0.35
     fill_value_float: -1.0
+    stream_pool: cuda_stream
 - type: nvidia::gxf::MemoryAvailableSchedulingTerm
   parameters:
     allocator: allocator
@@ -237,7 +224,6 @@ components:
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
     capacity: 2
-    policy: 0
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: disparity_in
@@ -246,7 +232,6 @@ components:
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
     capacity: 2
-    policy: 0
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: left_cam_receiver
@@ -255,7 +240,6 @@ components:
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
     capacity: 2
-    policy: 0
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: right_cam_receiver
@@ -264,17 +248,10 @@ components:
   type: nvidia::gxf::DoubleBufferTransmitter
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
   parameters:
     transmitter: data_transmitter
     min_size: 1
-- name: pool
-  type: nvidia::gxf::BlockMemoryPool
-  parameters:
-    storage_type: 1
-    block_size: 18432000
-    num_blocks: 40
 - type: nvidia::isaac::DisparityCompositor
   parameters:
     left_camera_model_receiver: left_cam_receiver
@@ -283,18 +260,13 @@ components:
     output_transmitter: data_transmitter
     min_disparity: 0
     max_disparity: -1
-- type: nvidia::gxf::MemoryAvailableSchedulingTerm
-  parameters:
-    allocator: pool
-    min_blocks: 1
 ---
-name: sink
+name: image_sink
 components:
 - name: signal
   type: nvidia::gxf::DoubleBufferReceiver
   parameters:
     capacity: 1
-    policy: 0
 - type: nvidia::gxf::MessageAvailableSchedulingTerm
   parameters:
     receiver: signal
@@ -304,23 +276,156 @@ components:
   parameters:
     source: signal
 ---
+name: camera_info_sink
+components:
+- name: signal
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 1
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: signal
+    min_size: 1
+- name: sink
+  type: nvidia::isaac_ros::MessageRelay
+  parameters:
+    source: signal
+---
+name: throttler
+components:
+- name: data_receiver_left
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 1
+- name: data_receiver_right
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 1
+- name: left_cam_receiver
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 1
+- name: right_cam_receiver
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 1
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: data_receiver_left
+    min_size: 1
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: data_receiver_right
+    min_size: 1
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: left_cam_receiver
+    min_size: 1
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: right_cam_receiver
+    min_size: 1
+- name: data_transmitter_left
+  type: nvidia::gxf::DoubleBufferTransmitter
+- name: data_transmitter_right
+  type: nvidia::gxf::DoubleBufferTransmitter
+- name: left_cam_transmitter
+  type: nvidia::gxf::DoubleBufferTransmitter
+- name: right_cam_transmitter
+  type: nvidia::gxf::DoubleBufferTransmitter
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: data_transmitter_left
+    min_size: 1
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: data_transmitter_right
+    min_size: 1
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: left_cam_transmitter
+    min_size: 1
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: right_cam_transmitter
+    min_size: 1
+- name: throttler1
+  type: nvidia::isaac::MultiChannelsThrottler
+  parameters:
+    inputs: [data_receiver_left, data_receiver_right]
+    outputs: [data_transmitter_left, data_transmitter_right]
+- name: throttler2
+  type: nvidia::isaac::MultiChannelsThrottler
+  parameters:
+    inputs: [left_cam_receiver, right_cam_receiver]
+    outputs: [left_cam_transmitter, right_cam_transmitter]
+---
+name: splitter
+components:
+- name: data_receiver
+  type: nvidia::gxf::DoubleBufferReceiver
+  parameters:
+    capacity: 2
+- type: nvidia::gxf::MessageAvailableSchedulingTerm
+  parameters:
+    receiver: data_receiver
+    min_size: 1
+- name: image_transmitter
+  type: nvidia::gxf::DoubleBufferTransmitter
+  parameters:
+    capacity: 1
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: image_transmitter
+    min_size: 1
+- name: camera_model_transmitter
+  type: nvidia::gxf::DoubleBufferTransmitter
+  parameters:
+    capacity: 1
+- type: nvidia::gxf::DownstreamReceptiveSchedulingTerm
+  parameters:
+    transmitter: camera_model_transmitter
+    min_size: 1
+- name: splitter
+  type: nvidia::isaac_ros::MessageSplitter
+  parameters:
+    rx: data_receiver
+    image_tx: image_transmitter
+    camera_model_tx: camera_model_transmitter
+---
 name: connections
 components:
 - type: nvidia::gxf::Connection
   parameters:
     source: sync/left_image_transmitter
-    target: ess/data_receiver_left
+    target: throttler/data_receiver_left
 - type: nvidia::gxf::Connection
   parameters:
     source: sync/right_image_transmitter
-    target: ess/data_receiver_right
+    target: throttler/data_receiver_right
 - type: nvidia::gxf::Connection
   parameters:
     source: sync/left_cam_transmitter
-    target: disparity_compositor/left_cam_receiver
+    target: throttler/left_cam_receiver
 - type: nvidia::gxf::Connection
   parameters:
     source: sync/right_cam_transmitter
+    target: throttler/right_cam_receiver
+- type: nvidia::gxf::Connection
+  parameters:
+    source: throttler/data_transmitter_left
+    target: ess/data_receiver_left
+- type: nvidia::gxf::Connection
+  parameters:
+    source: throttler/data_transmitter_right
+    target: ess/data_receiver_right
+- type: nvidia::gxf::Connection
+  parameters:
+    source: throttler/left_cam_transmitter
+    target: disparity_compositor/left_cam_receiver
+- type: nvidia::gxf::Connection
+  parameters:
+    source: throttler/right_cam_transmitter
     target: disparity_compositor/right_cam_receiver
 - type: nvidia::gxf::Connection
   parameters:
@@ -337,17 +442,24 @@ components:
 - type: nvidia::gxf::Connection
   parameters:
     source: disparity_compositor/data_transmitter
-    target: sink/signal
+    target: splitter/data_receiver
+- type: nvidia::gxf::Connection
+  parameters:
+    source: splitter/image_transmitter
+    target: image_sink/signal
+- type: nvidia::gxf::Connection
+  parameters:
+    source: splitter/camera_model_transmitter
+    target: camera_info_sink/signal
 ---
 components:
 - name: clock
   type: nvidia::gxf::RealtimeClock
-- type: nvidia::gxf::MultiThreadScheduler
+- type: nvidia::gxf::EventBasedScheduler
   parameters:
     clock: clock
     stop_on_deadlock: false
-    check_recession_period_ms: 1
-    worker_thread_number: 2
+    worker_thread_number: 4
 - type: nvidia::gxf::JobStatistics
   parameters:
     clock: clock

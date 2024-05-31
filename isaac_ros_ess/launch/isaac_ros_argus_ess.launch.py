@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,12 +30,27 @@ def generate_launch_description():
             description='The absolute path to the ESS engine plan.'),
         DeclareLaunchArgument(
             'threshold',
-            default_value='0.9',
+            default_value='0.35',
             description='Threshold value ranges between 0.0 and 1.0 '
                         'for filtering disparity with confidence.'),
+        DeclareLaunchArgument(
+            'module_id',
+            default_value='2',
+            description='Index specifying the stereo camera module to use.'),
+        DeclareLaunchArgument(
+            'output_width',
+            default_value='960',
+            description='ESS model output width.'),
+        DeclareLaunchArgument(
+            'output_height',
+            default_value='576',
+            description='ESS model output height.'),
     ]
     engine_file_path = LaunchConfiguration('engine_file_path')
     threshold = LaunchConfiguration('threshold')
+    module_id = LaunchConfiguration('module_id')
+    output_width = LaunchConfiguration('output_width')
+    output_height = LaunchConfiguration('output_height')
 
     argus_stereo_node = ComposableNode(
         name='argus_stereo',
@@ -44,6 +59,7 @@ def generate_launch_description():
         parameters=[{
             'left_optical_frame_name': 'left/image_rect',
             'right_optical_frame_name': 'right/image_rect',
+            'module_id': module_id
         }],
     )
 
@@ -52,14 +68,14 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         parameters=[{
-            'output_width': 960,
-            'output_height': 576,
+            'output_width': output_width,
+            'output_height': output_height,
             'keep_aspect_ratio': True
         }],
         remappings=[
-            ('camera_info', 'left/camerainfo'),
+            ('camera_info', 'left/camera_info'),
             ('image', 'left/image_raw'),
-            ('resize/camera_info', 'left/camerainfo_resize'),
+            ('resize/camera_info', 'left/camera_info_resize'),
             ('resize/image', 'left/image_resize')]
     )
 
@@ -68,14 +84,14 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         parameters=[{
-            'output_width': 960,
-            'output_height': 576,
+            'output_width': output_width,
+            'output_height': output_height,
             'keep_aspect_ratio': True
         }],
         remappings=[
-            ('camera_info', 'right/camerainfo'),
+            ('camera_info', 'right/camera_info'),
             ('image', 'right/image_raw'),
-            ('resize/camera_info', 'right/camerainfo_resize'),
+            ('resize/camera_info', 'right/camera_info_resize'),
             ('resize/image', 'right/image_resize')]
     )
 
@@ -84,12 +100,12 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::RectifyNode',
         parameters=[{
-            'output_width': 960,
-            'output_height': 576,
+            'output_width': output_width,
+            'output_height': output_height,
         }],
         remappings=[
             ('image_raw', 'left/image_resize'),
-            ('camera_info', 'left/camerainfo_resize'),
+            ('camera_info', 'left/camera_info_resize'),
             ('image_rect', 'left/image_rect'),
             ('camera_info_rect', 'left/camera_info_rect')
         ]
@@ -100,12 +116,12 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::RectifyNode',
         parameters=[{
-            'output_width': 960,
-            'output_height': 576,
+            'output_width': output_width,
+            'output_height': output_height,
         }],
         remappings=[
             ('image_raw', 'right/image_resize'),
-            ('camera_info', 'right/camerainfo_resize'),
+            ('camera_info', 'right/camera_info_resize'),
             ('image_rect', 'right/image_rect'),
             ('camera_info_rect', 'right/camera_info_rect')
         ]
@@ -116,7 +132,9 @@ def generate_launch_description():
         package='isaac_ros_ess',
         plugin='nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode',
         parameters=[{'engine_file_path': engine_file_path,
-                     'threshold': threshold}],
+                     'threshold': threshold,
+                     'input_layer_width': output_width,
+                     'input_layer_height': output_height}],
         remappings=[
             ('left/camera_info', 'left/camera_info_rect'),
             ('right/camera_info', 'right/camera_info_rect')

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 # then saves the output prediction to spcified location as an image.
 
 import argparse
+import os
 import subprocess
 
 import cv2
@@ -32,31 +33,33 @@ from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, Image
 from stereo_msgs.msg import DisparityImage
 
+ros_ws = os.environ['ISAAC_ROS_WS']
+
 
 def get_args():
     parser = argparse.ArgumentParser(description='ESS Disparity Node Visualizer')
     parser.add_argument('--save_image', action='store_true', help='Save output or display it.')
-    parser.add_argument('--result_path', default='/workspaces/isaac_ros-dev/src/output.png',
+    parser.add_argument('--min_disp', type=int, default=0,
+                        help='Min disparity for colormap normalization.')
+    parser.add_argument('--max_disp', type=int, default=255,
+                        help='Min disparity for colormap normalization.')
+    parser.add_argument('--result_path', default=ros_ws + '/output.png',
                         help='Absolute path to save your result.')
     parser.add_argument('--raw_inputs', action='store_true',
                         help='Use rosbag as inputs or raw image and camera info files as inputs.')
     parser.add_argument('--enable_rosbag', action='store_true', help='Save output or display it',
                         default=False)
     parser.add_argument('--rosbag_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
-                                'resources/rosbags/ess_rosbag',
+                        default=ros_ws + '/isaac_ros_assets/isaac_ros_ess/rosbags/ess_rosbag',
                         help='Absolute path to your rosbag.')
     parser.add_argument('--left_image_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
-                                'resources/examples/left.png',
+                        default=ros_ws + '/isaac_ros_assets/isaac_ros_ess/examples/left.png',
                         help='Absolute path your left image.')
     parser.add_argument('--right_image_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
-                                'resources/examples/right.png',
+                        default=ros_ws + '/isaac_ros_assets/isaac_ros_ess/examples/right.png',
                         help='Absolute path your right image.')
     parser.add_argument('--camera_info_path',
-                        default='/workspaces/isaac_ros-dev/src/isaac_ros_dnn_stereo_depth/'
-                                'resources/examples/camera.json',
+                        default=ros_ws + '/isaac_ros_assets/isaac_ros_ess/examples/camera.json',
                         help='Absolute path your camera info json file.')
     args = parser.parse_args()
     return args
@@ -111,7 +114,7 @@ class ESSVisualizer(Node):
         self.get_logger().info('Result was received.')
         disp_img = self._bridge.imgmsg_to_cv2(disp_msg.image)
         # Normalize and convert to colormap for visalization
-        disp_img = (disp_img - disp_img.min()) / disp_img.max() * 255
+        disp_img = (disp_img - self.args.min_disp) / self.args.max_disp * 255
         color_map = cv2.applyColorMap(disp_img.astype(np.uint8), cv2.COLORMAP_VIRIDIS)
         if self.args.save_image:
             cv2.imwrite(self.args.result_path, color_map)
