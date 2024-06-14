@@ -21,7 +21,7 @@ SPDX-License-Identifier: Apache-2.0
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>isaac_ros_ess</name>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
   <description>DNN Stereo Disparity Network for Isaac ROS</description>
 
   <maintainer email="isaac-ros-maintainers@nvidia.com">Isaac ROS Maintainers</maintainer>
@@ -42,7 +42,7 @@ SPDX-License-Identifier: Apache-2.0
   <depend>gxf_isaac_messages</depend>
   <depend>gxf_isaac_messages_throttler</depend>
   <depend>isaac_ros_ess_models_install</depend>
-  
+
   <build_depend>isaac_ros_common</build_depend>
   <build_depend>gxf_isaac_gems</build_depend>
 

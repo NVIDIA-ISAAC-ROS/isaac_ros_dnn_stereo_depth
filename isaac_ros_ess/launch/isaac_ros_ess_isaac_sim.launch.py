@@ -50,10 +50,10 @@ def generate_launch_description():
                 'encoding_desired': 'rgb8',
         }],
         remappings=[
-            ('camera_info', 'front_stereo_camera/right_rgb/camerainfo'),
-            ('image', 'front_stereo_camera/right_rgb/image_raw'),
-            ('resize/camera_info', 'front_stereo_camera/right_rgb/camerainfo_resize'),
-            ('resize/image', 'front_stereo_camera/right_rgb/image_resize')]
+            ('camera_info', 'front_stereo_camera/right/camera_info'),
+            ('image', 'front_stereo_camera/right/image_rect_color'),
+            ('resize/camera_info', 'front_stereo_camera/right/camera_info_resize'),
+            ('resize/image', 'front_stereo_camera/right/image_resize')]
     )
 
     image_resize_node_left = ComposableNode(
@@ -66,10 +66,10 @@ def generate_launch_description():
                 'encoding_desired': 'rgb8',
         }],
         remappings=[
-            ('camera_info', 'front_stereo_camera/left_rgb/camerainfo'),
-            ('image', 'front_stereo_camera/left_rgb/image_raw'),
-            ('resize/camera_info', 'front_stereo_camera/left_rgb/camerainfo_resize'),
-            ('resize/image', 'front_stereo_camera/left_rgb/image_resize')]
+            ('camera_info', 'front_stereo_camera/left/camera_info'),
+            ('image', 'front_stereo_camera/left/image_rect_color'),
+            ('resize/camera_info', 'front_stereo_camera/left/camera_info_resize'),
+            ('resize/image', 'front_stereo_camera/left/image_resize')]
     )
 
     disparity_node = ComposableNode(
@@ -80,11 +80,11 @@ def generate_launch_description():
                      'threshold': threshold,
                      'input_layer_width': 960,
                      'input_layer_height': 576}],
-        remappings=[('left/image_rect', 'front_stereo_camera/left_rgb/image_resize'),
+        remappings=[('left/image_rect', 'front_stereo_camera/left/image_resize'),
                     ('left/camera_info',
-                     'front_stereo_camera/left_rgb/camerainfo_resize'),
-                    ('right/image_rect', 'front_stereo_camera/right_rgb/image_resize'),
-                    ('right/camera_info', 'front_stereo_camera/right_rgb/camerainfo_resize')])
+                     'front_stereo_camera/left/camera_info_resize'),
+                    ('right/image_rect', 'front_stereo_camera/right/image_resize'),
+                    ('right/camera_info', 'front_stereo_camera/right/camera_info_resize')])
 
     pointcloud_node = ComposableNode(
         package='isaac_ros_stereo_image_proc',
@@ -93,10 +93,10 @@ def generate_launch_description():
             'use_color': True,
             'unit_scaling': 1.0
         }],
-        remappings=[('left/image_rect_color', 'front_stereo_camera/left_rgb/image_resize'),
+        remappings=[('left/image_rect_color', 'front_stereo_camera/left/image_resize'),
                     ('left/camera_info',
-                     'front_stereo_camera/left_rgb/camerainfo_resize'),
-                    ('right/camera_info', 'front_stereo_camera/right_rgb/camerainfo_resize')])
+                     'front_stereo_camera/left/camera_info_resize'),
+                    ('right/camera_info', 'front_stereo_camera/right/camera_info_resize')])
 
     container = ComposableNodeContainer(
         name='disparity_container',
