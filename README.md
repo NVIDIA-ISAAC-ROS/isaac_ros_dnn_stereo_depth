@@ -15,24 +15,40 @@ Learn how to use this package by watching our on-demand webinar:
 
 ## Overview
 
-[Isaac ROS DNN Stereo Depth](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_dnn_stereo_depth) provides a GPU-accelerated package for DNN-based
-stereo disparity. Stereo disparity is calculated from a
-time-synchronized image pair sourced from a stereo camera and is used to
-produce a depth image or a point cloud for a scene. The `isaac_ros_ess`
-package uses the [ESS DNN
-model](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/isaac/models/dnn_stereo_disparity)
-to perform stereo depth estimation via continuous disparity prediction.
-Given a pair of stereo input images, the package generates a disparity
-map of the left input image.
+The vision depth perception problem is generally useful in many fields of robotics such as estimating
+the pose of a robotic arm in an object manipulation task, estimating distance of static or moving targets
+in autonomous robot navigation, tracking targets in delivery robots and so on.
+[Isaac ROS DNN Stereo Depth](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_dnn_stereo_depth) is targeted at two Isaac applications,
+Isaac Manipulator and Isaac Perceptor. In Isaac Manipulator application, ESS is deployed in
+[Isaac ROS cuMotion](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_cumotion/index.html)
+package as a plug-in node to provide depth perception maps for robot arm motion planning and control.
+In this scenario, multi-camera stereo streams of industrial robot arms on a table task are passed to ESS to
+obtain corresponding depth streams. The depth streams are used to segment the relative distance of robot arms from
+corresponding objects on the table; thus providing signals for collision avoidance and fine-grain control.
+Similarly, the Isaac Perceptor application uses several Isaac ROS packages, namely,
+[Isaac ROS Nova](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_nova/index.html),
+[Isaac ROS Visual Slam](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_visual_slam/index.html),
+[Isaac ROS Stereo Depth (ESS)](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/index.html),
+[Isaac ROS Nvblox](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_nvblox/index.html)
+and [Isaac ROS Image Pipeline](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_image_pipeline/index.html).
+
+ESS is deployed in Isaac Perceptor to enable Nvblox to create
+3D voxelized images of the robot surroundings. Specifically, the Nova developer suite provides 3x stereo-camera
+streams to Isaac Perceptor. Each stream corresponds to the front, left, and right cameras.
+In both Isaac Manipulator and Isaac Perceptor, a camera-specific image processing pipeline consisting of
+GPU-accelerated operations, provides rectification and undistortion of the input stereo images. All stereo stream image
+pair are time synchronized before before passing them to ESS. ESS node outputs corresponding depth maps for all three
+preprocessed image streams and combines the depth images with motion signals provided by cuVSLAM module.
+The combined depth and motion integrated signals are fed to Nvblox module to produce a dense 3D volumetric scene
+reconstruction of the surrounding scene.
 
 <div align="center"><a class="reference internal image-reference" href="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/main/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess_nodegraph.png/"><img alt="image" src="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/main/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess_nodegraph.png/" width="800px"/></a></div>
 
-ESS is used in a graph of nodes to provide a disparity prediction from an input left and right stereo image pair.
-Images to ESS need to be rectified and resized to the appropriate input resolution.
-The aspect ratio of the image is recommended to be maintained, so the image may need to be cropped and resized to maintain the input aspect ratio.
-The graph for DNN encode, DNN inference, and DNN decode is included in the ESS node.
-Inference is performed using TensorRT, as the ESS DNN model is designed with optimizations supported by TensorRT.
-ESS node is agnostic to the model dimension and disparity output has the same dimension as the ESS model.
+Above, ESS node is used in a graph of nodes to provide a disparity prediction from an input left and right stereo image pair.
+The rectify and resize nodes pre-process the left and right frames to the appropriate resolution.
+The aspect ratio of the image is recommended to be maintained to avoid degrading the depth output quality.
+The graph for DNN encode, DNN inference, and DNN decode is included in the ESS node. Inference is performed using
+TensorRT, as the ESS DNN model is designed with optimizations supported by TensorRT.
 
 ## Isaac ROS NITROS Acceleration
 
