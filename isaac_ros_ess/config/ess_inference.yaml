@@ -210,7 +210,6 @@ components:
     mask_input: confidence_input
     masked_output: masked_output
     allocator: allocator
-    threshold: 0.35
     fill_value_float: -1.0
     stream_pool: cuda_stream
 - type: nvidia::gxf::MemoryAvailableSchedulingTerm

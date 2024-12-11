@@ -53,7 +53,7 @@ gxf_result_t PassthroughComponents(gxf::Entity& output, gxf::Entity& input,
     }
     *(output_component.value()) = *(maybe_component.value());
   } else {
-    GXF_LOG_INFO("component %s not found.", name);
+    GXF_LOG_DEBUG("component %s not found.", name);
   }
 
   return GXF_SUCCESS;

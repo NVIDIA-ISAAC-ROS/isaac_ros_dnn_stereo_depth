@@ -48,9 +48,9 @@ def generate_launch_description():
     ]
 
     left_image_topic = PythonExpression(["'/' + '", camera, "' + '/left/image_compressed'"])
-    left_info_topic = PythonExpression(["'/' + '", camera, "' + '/left/camerainfo'"])
+    left_info_topic = PythonExpression(["'/' + '", camera, "' + '/left/camera_info'"])
     right_image_topic = PythonExpression(["'/' + '", camera, "' + '/right/image_compressed'"])
-    right_info_topic = PythonExpression(["'/' + '", camera, "' + '/right/camerainfo'"])
+    right_info_topic = PythonExpression(["'/' + '", camera, "' + '/right/camera_info'"])
     left_raw_image_topic = PythonExpression(["'/' + '", camera, "' + '/left/image_raw'"])
     right_raw_image_topic = PythonExpression(["'/' + '", camera, "' + '/right/image_raw'"])
 

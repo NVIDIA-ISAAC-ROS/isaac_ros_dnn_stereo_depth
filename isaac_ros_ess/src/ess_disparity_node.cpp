@@ -160,7 +160,7 @@ ESSDisparityNode::ESSDisparityNode(const rclcpp::NodeOptions & options)
       "input_layers_name", {"input_left", "input_right"})),
   output_layers_name_(declare_parameter<std::vector<std::string>>(
       "output_layers_name", {"output_left", "output_conf"})),
-  threshold_(declare_parameter<float>("threshold", 0.35)),
+  threshold_(declare_parameter<float>("threshold", 0.4)),
   throttler_skip_(declare_parameter<int>("throttler_skip", 0))
 {
   RCLCPP_DEBUG(get_logger(), "[ESSDisparityNode] Initializing ESSDisparityNode.");

@@ -23,9 +23,9 @@ import subprocess
 class ESSEngineGenerator:
 
     def __init__(self,
-                 etlt_model,
+                 onnx_model,
                  arch=''):
-        self.etlt_model = etlt_model
+        self.onnx_model = onnx_model
         if not arch:
             self.arch = platform.machine()
             print('Architecture of the target platform is {}'.format(self.arch))
@@ -34,27 +34,27 @@ class ESSEngineGenerator:
 
     def generate(self):
         supported_arch = ['x86_64', 'aarch64']
-        model_file = os.path.abspath(self.etlt_model)
+        model_file = os.path.abspath(self.onnx_model)
         if self.arch not in supported_arch:
             print('Unsupported architecture: {}. Supported architectures are:'
                   '{}'.format(self.arch, supported_arch))
             return
-        elif os.path.exists(os.path.abspath(self.etlt_model)):
+        elif os.path.exists(os.path.abspath(self.onnx_model)):
             plugin = (os.path.dirname(model_file) + '/plugins/' +
                       self.arch + '/ess_plugins.so')
-            engine_file = model_file.replace('.etlt', '.engine')
+            engine_file = model_file.replace('.onnx', '.engine')
 
-            response = subprocess.call('LD_PRELOAD=' + plugin +
-                                       ' tao-converter -k ess -t fp16' +
-                                       ' -e ' + engine_file +
-                                       ' -o output_left,output_conf ' +
-                                       self.etlt_model, shell=True)
+            response = subprocess.call('/usr/src/tensorrt/bin/trtexec' +
+                                       ' --onnx=' + self.onnx_model +
+                                       ' --saveEngine=' + engine_file +
+                                       ' --fp16' +
+                                       ' --staticPlugins=' + plugin, shell=True)
 
             if response == 0:
                 print('Engine file for ESS model{} is generated!'
-                      .format(self.etlt_model))
+                      .format(self.onnx_model))
             else:
                 print('Failed to generate engine file for model {}'
-                      .format(self.etlt_model))
+                      .format(self.onnx_model))
         else:
-            print('ESS etlt model is not found.')
+            print('ESS onnx model is not found.')

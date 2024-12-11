@@ -49,9 +49,8 @@ size_t getDataSize(const std::vector<int64_t>& shape, ChannelType dataType) {
 
 std::error_code TensorRTInferencer::getLayerInfo(LayerInfo& layer, std::string layerName) {
     layer.name = layerName;
-    layer.index = m_inferenceEngine->getBindingIndex(layerName.c_str());
-    auto dim = m_inferenceEngine->getBindingDimensions(layer.index);
-    nvinfer1::TensorFormat tensorFormat = m_inferenceEngine->getBindingFormat(layer.index);
+    auto dim = m_inferenceEngine->getTensorShape(layer.name.c_str());
+    nvinfer1::TensorFormat tensorFormat = m_inferenceEngine->getTensorFormat(layer.name.c_str());
 
     std::error_code err;
     err = getCVCoreChannelLayoutFromTensorRT(layer.layout, tensorFormat);
@@ -64,7 +63,7 @@ std::error_code TensorRTInferencer::getLayerInfo(LayerInfo& layer, std::string l
     }
 
     err = getCVCoreChannelTypeFromTensorRT(layer.dataType,
-        m_inferenceEngine->getBindingDataType(layer.index));
+        m_inferenceEngine->getTensorDataType(layer.name.c_str()));
     layer.layerSize = getDataSize(layer.shape, layer.dataType);
     if (err != make_error_code(ErrorCode::SUCCESS)) {
         return ErrorCode::INVALID_ARGUMENT;
@@ -174,16 +173,15 @@ std::error_code TensorRTInferencer::convertModelToEngine(int32_t dla_core,
   }
   builderConfig->addOptimizationProfile(optimization_profile);
 
-  // Creates TensorRT Engine Plan
-  std::unique_ptr<nvinfer1::ICudaEngine> engine(
-      builder->buildEngineWithConfig(*network, *builderConfig));
-  if (!engine) {
+  // Creates TensorRT Model stream
+  std::unique_ptr<nvinfer1::IHostMemory> model_stream(
+      builder->buildSerializedNetwork(*network, *builderConfig));
+  if (!model_stream) {
     GXF_LOG_ERROR("Failed to build TensorRT engine from model %s.", model_file);
     return InferencerErrorCode::INVALID_ARGUMENT;
   }
 
-  std::unique_ptr<nvinfer1::IHostMemory> model_stream(engine->serialize());
-  if (!model_stream || model_stream->size() == 0 || model_stream->data() == nullptr) {
+  if (model_stream->size() == 0 || model_stream->data() == nullptr) {
     GXF_LOG_ERROR("Fail to serialize TensorRT Engine.");
     return InferencerErrorCode::INVALID_ARGUMENT;
   }
@@ -284,13 +282,14 @@ TensorRTInferencer::TensorRTInferencer(const TensorRTInferenceParams& params)
     }
 
     m_hasImplicitBatch = m_inferenceEngine->hasImplicitBatchDimension();
-    m_bindingsCount    = m_inferenceEngine->getNbBindings();
+    m_ioTensorsCount    = m_inferenceEngine->getNbIOTensors();
     if (!m_hasImplicitBatch) {
-        for (size_t i = 0; i < m_bindingsCount; i++) {
-            if (m_inferenceEngine->bindingIsInput(i)) {
-                nvinfer1::Dims dims_i(m_inferenceEngine->getBindingDimensions(i));
+        for (size_t i = 0; i < m_ioTensorsCount; i++) {
+            const char* name = m_inferenceEngine->getIOTensorName(i);
+            if (m_inferenceEngine->getTensorIOMode(name) == nvinfer1::TensorIOMode::kINPUT) {
+                nvinfer1::Dims dims_i(m_inferenceEngine->getTensorShape(name));
                 nvinfer1::Dims4 inputDims{1, dims_i.d[1], dims_i.d[2], dims_i.d[3]};
-                m_inferenceContext->setBindingDimensions(i, inputDims);
+                m_inferenceContext->setInputShape(name, inputDims);
             }
         }
     }
@@ -299,7 +298,6 @@ TensorRTInferencer::TensorRTInferencer(const TensorRTInferenceParams& params)
     if (err != make_error_code(ErrorCode::SUCCESS)) {
         throw err;
     }
-    m_buffers.resize(m_bindingsCount);
 }
 
 // Set input layer tensor
@@ -309,7 +307,8 @@ std::error_code TensorRTInferencer::setInput(const TensorBase& trtInputBuffer,
         return ErrorCode::INVALID_ARGUMENT;
     }
     LayerInfo layer        = m_modelInfo.inputLayers[inputLayerName];
-    m_buffers[layer.index] = trtInputBuffer.getData();
+    m_inferenceContext->setTensorAddress(inputLayerName.c_str(),
+                                          trtInputBuffer.getData());
     return ErrorCode::SUCCESS;
 }
 
@@ -320,7 +319,8 @@ std::error_code TensorRTInferencer::setOutput(TensorBase& trtOutputBuffer,
         return ErrorCode::INVALID_ARGUMENT;
     }
     LayerInfo layer        = m_modelInfo.outputLayers[outputLayerName];
-    m_buffers[layer.index] = trtOutputBuffer.getData();
+    m_inferenceContext->setTensorAddress(outputLayerName.c_str(),
+                                         trtOutputBuffer.getData());
     return ErrorCode::SUCCESS;
 }
 
@@ -334,18 +334,18 @@ ModelMetaData TensorRTInferencer::getModelMetaData() const {
 std::error_code TensorRTInferencer::infer(size_t batchSize) {
     bool err = true;
     if (!m_hasImplicitBatch) {
-        size_t bindingsCount = m_inferenceEngine->getNbBindings();
-        for (size_t i = 0; i < bindingsCount; i++) {
-            if (m_inferenceEngine->bindingIsInput(i)) {
-                nvinfer1::Dims dims_i(m_inferenceEngine->getBindingDimensions(i));
-                nvinfer1::Dims4 inputDims{static_cast<int>(batchSize), dims_i.d[1],
-                    dims_i.d[2], dims_i.d[3]};
-                m_inferenceContext->setBindingDimensions(i, inputDims);
+        size_t ioTensorsCount = m_inferenceEngine->getNbIOTensors();
+        for (size_t i = 0; i < ioTensorsCount; i++) {
+            const char* name = m_inferenceEngine->getIOTensorName(i);
+            if (m_inferenceEngine->getTensorIOMode(name) == nvinfer1::TensorIOMode::kINPUT) {
+                nvinfer1::Dims dims_i(m_inferenceEngine->getTensorShape(name));
+                nvinfer1::Dims4 inputDims{1, dims_i.d[1], dims_i.d[2], dims_i.d[3]};
+                m_inferenceContext->setInputShape(name, inputDims);
             }
         }
-        err = m_inferenceContext->enqueueV2(&m_buffers[0], m_cudaStream, nullptr);
+        err = m_inferenceContext->enqueueV3(m_cudaStream);
     } else {
-        err = m_inferenceContext->enqueue(m_maxBatchSize, &m_buffers[0], m_cudaStream, nullptr);
+        return InferencerErrorCode::INVALID_ARGUMENT;
     }
     if (!err) {
         return InferencerErrorCode::TENSORRT_INFERENCE_ERROR;
@@ -360,27 +360,14 @@ std::error_code TensorRTInferencer::setCudaStream(cudaStream_t cudaStream) {
 }
 
 std::error_code TensorRTInferencer::unregister(std::string layerName) {
-    size_t index;
-    if (m_modelInfo.outputLayers.find(layerName) != m_modelInfo.outputLayers.end()) {
-        index = m_modelInfo.outputLayers[layerName].index;
-    } else if (m_modelInfo.inputLayers.find(layerName) != m_modelInfo.inputLayers.end()) {
-        index = m_modelInfo.inputLayers[layerName].index;
-    } else {
-        return ErrorCode::INVALID_ARGUMENT;
-    }
-    m_buffers[index] = nullptr;
     return ErrorCode::SUCCESS;
 }
 
 std::error_code TensorRTInferencer::unregister() {
-    for (size_t i = 0; i < m_buffers.size(); i++) {
-        m_buffers[i] = nullptr;
-    }
     return ErrorCode::SUCCESS;
 }
 
 TensorRTInferencer::~TensorRTInferencer() {
-    m_buffers.clear();
 }
 
 }  // namespace inferencer
