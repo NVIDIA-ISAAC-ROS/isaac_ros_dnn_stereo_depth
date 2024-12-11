@@ -30,7 +30,7 @@ def generate_launch_description():
             description='The absolute path to the ESS engine plan.'),
         DeclareLaunchArgument(
             'threshold',
-            default_value='0.35',
+            default_value='0.4',
             description='Threshold value ranges between 0.0 and 1.0 '
                         'for filtering disparity with confidence.'),
         DeclareLaunchArgument(
@@ -57,8 +57,6 @@ def generate_launch_description():
         package='isaac_ros_argus_camera',
         plugin='nvidia::isaac_ros::argus::ArgusStereoNode',
         parameters=[{
-            'left_optical_frame_name': 'left/image_rect',
-            'right_optical_frame_name': 'right/image_rect',
             'module_id': module_id
         }],
     )

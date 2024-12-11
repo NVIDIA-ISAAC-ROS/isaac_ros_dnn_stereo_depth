@@ -24,4 +24,10 @@ ament_auto_find_build_dependencies()
 install_isaac_ros_asset(install_ess_models)
 install(PROGRAMS asset_scripts/install_ess_models.sh DESTINATION lib/${PROJECT_NAME})
 
+
+# Embed versioning information into installed files
+ament_index_get_resource(ISAAC_ROS_COMMON_CMAKE_PATH isaac_ros_common_cmake_path isaac_ros_common)
+include("${ISAAC_ROS_COMMON_CMAKE_PATH}/isaac_ros_common-version-info.cmake")
+generate_version_info(${PROJECT_NAME})
+
 ament_auto_package(INSTALL_TO_SHARE)

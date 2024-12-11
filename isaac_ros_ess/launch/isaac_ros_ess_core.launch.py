@@ -100,7 +100,7 @@ class IsaacROSEssLaunchFragment(IsaacROSLaunchFragment):
             ),
             'threshold': DeclareLaunchArgument(
                 'threshold',
-                default_value='0.35'
+                default_value='0.4'
             ),
             'input_layer_width': DeclareLaunchArgument(
                 'input_layer_width',

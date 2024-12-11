@@ -35,7 +35,7 @@ def generate_launch_description():
             description='The absolute path to the ESS engine plan.'),
         DeclareLaunchArgument(
             'threshold',
-            default_value='0.35',
+            default_value='0.4',
             description='Threshold value ranges between 0.0 and 1.0 '
                         'for filtering disparity with confidence.'),
         DeclareLaunchArgument(
@@ -46,19 +46,27 @@ def generate_launch_description():
             'wide_fov',
             default_value='true',
             description='Flag to enable wide fov in argus camera.'),
+        DeclareLaunchArgument(
+            'output_width',
+            default_value='960',
+            description='ESS model output width.'),
+        DeclareLaunchArgument(
+            'output_height',
+            default_value='576',
+            description='ESS model output height.'),
     ]
     engine_file_path = LaunchConfiguration('engine_file_path')
     threshold = LaunchConfiguration('threshold')
     module_id = LaunchConfiguration('module_id')
     wide_fov = LaunchConfiguration('wide_fov')
+    output_width = LaunchConfiguration('output_width')
+    output_height = LaunchConfiguration('output_height')
 
     argus_stereo_node = ComposableNode(
         name='argus_stereo',
         package='isaac_ros_argus_camera',
         plugin='nvidia::isaac_ros::argus::ArgusStereoNode',
         parameters=[{
-            'left_optical_frame_name': 'left/image_rect',
-            'right_optical_frame_name': 'right/image_rect',
             'module_id': module_id,
             'wide_fov': wide_fov,
             'type_negotiation_duration_s': 5,
@@ -149,8 +157,8 @@ def generate_launch_description():
         plugin='nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode',
         parameters=[{'engine_file_path': engine_file_path,
                      'threshold': threshold,
-                     'input_layer_width': 960,
-                     'input_layer_height': 576,
+                     'input_layer_width': output_width,
+                     'input_layer_height': output_height,
                      'type_negotiation_duration_s': 5}],
         remappings=[
             ('left/image_rect', 'left/image_crop'),
@@ -165,8 +173,8 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         parameters=[{
-            'output_width': 960,
-            'output_height': 576,
+            'output_width': output_width,
+            'output_height': output_height,
             'keep_aspect_ratio': False,
             'type_negotiation_duration_s': 5,
         }],

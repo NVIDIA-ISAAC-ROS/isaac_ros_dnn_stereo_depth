@@ -26,8 +26,8 @@ from isaac_ros_ess.engine_generator import ESSEngineGenerator
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description='ESS model engine generator with tao-converter')
-    parser.add_argument('--etlt_model', default='', help='ESS etlt model.')
+        description='ESS model engine generator with trtexec')
+    parser.add_argument('--onnx_model', default='', help='ESS onnx model.')
     parser.add_argument('--arch',
                         default='x86_64',
                         help='Architecture of the target platform.'
@@ -37,7 +37,8 @@ def get_args():
 
 def main():
     args = get_args()
-    gen = ESSEngineGenerator(etlt_model=args.etlt_model, arch=args.arch)
+    print('Generating ESS engine for model: {}'.format(args.onnx_model))
+    gen = ESSEngineGenerator(onnx_model=args.onnx_model, arch=args.arch)
     gen.generate()
 
 

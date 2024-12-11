@@ -15,75 +15,58 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include "ess_disparity_node.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 // Objective: to cover code lines where exceptions are thrown
 // Approach: send Invalid Arguments for node parameters to trigger the exception
 
-class ESSDisparityNodeTestSuite : public ::testing::Test
-{
-protected:
-  void SetUp() {rclcpp::init(0, nullptr);}
-  void TearDown() {(void)rclcpp::shutdown();}
-};
 
-
-void test_empty_engine_path()
+TEST(ess_disparity_node_test, test_empty_engine_path)
 {
+  rclcpp::init(0, nullptr);
   rclcpp::NodeOptions options;
-  options.arguments(
+  options.append_parameter_override("engine_file_path", "");
+  EXPECT_THROW(
   {
-    "--ros-args",
-    "-p", "engine_file_path:=''",
-  });
-  try {
-    nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode ess_disparity_node(options);
-  } catch (const std::invalid_argument & e) {
-    std::string err(e.what());
-    if (err.find("Empty engine_file_path") != std::string::npos) {
-      _exit(1);
+    try {
+      nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode ess_disparity_node(options);
+    } catch (const std::invalid_argument & e) {
+      EXPECT_THAT(e.what(), testing::HasSubstr("Empty engine_file_path"));
+      throw;
+    } catch (const rclcpp::exceptions::InvalidParameterValueException & e) {
+      EXPECT_THAT(e.what(), testing::HasSubstr("No parameter value set"));
+      throw;
     }
-  }
-  _exit(0);
+  }, std::invalid_argument);
+  rclcpp::shutdown();
 }
 
-void test_image_type()
+TEST(ess_disparity_node_test, test_image_type)
 {
+  rclcpp::init(0, nullptr);
   rclcpp::NodeOptions options;
-  options.arguments(
+  options.append_parameter_override("engine_file_path", "ess.engine");
+  options.append_parameter_override("image_type", "invalid");
+  EXPECT_THROW(
   {
-    "--ros-args",
-    "-p", "engine_file_path:='isaac_ros_dev.engine'",
-    "-p", "image_type:='GBR_U8'",
-  });
-  try {
-    nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode ess_disparity_node(options);
-  } catch (const std::invalid_argument & e) {
-    std::string err(e.what());
-    if (err.find("Only support image_type RGB_U8 and BGR_U8") != std::string::npos) {
-      _exit(1);
+    try {
+      nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode ess_disparity_node(options);
+    } catch (const std::invalid_argument & e) {
+      EXPECT_THAT(e.what(), testing::HasSubstr("Only support image_type RGB_U8 and BGR_U8."));
+      throw;
+    } catch (const rclcpp::exceptions::InvalidParameterValueException & e) {
+      EXPECT_THAT(e.what(), testing::HasSubstr("No parameter value set"));
+      throw;
     }
-  }
-  _exit(0);
-}
-
-
-TEST_F(ESSDisparityNodeTestSuite, test_empty_engine_path)
-{
-  EXPECT_EXIT(test_empty_engine_path(), testing::ExitedWithCode(1), "");
-}
-
-TEST_F(ESSDisparityNodeTestSuite, test_image_type)
-{
-  EXPECT_EXIT(test_image_type(), testing::ExitedWithCode(1), "");
+  }, std::invalid_argument);
+  rclcpp::shutdown();
 }
 
 
 int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
-  ::testing::GTEST_FLAG(death_test_style) = "threadsafe";
   return RUN_ALL_TESTS();
 }

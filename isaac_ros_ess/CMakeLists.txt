@@ -55,6 +55,7 @@ if(BUILD_TESTING)
   ament_add_gtest(ess_disparity_node_test test/ess_disparity_node_test.cpp)
   target_link_libraries(ess_disparity_node_test ess_disparity_node)
   target_include_directories(ess_disparity_node_test PUBLIC include/isaac_ros_ess/)
+  target_include_directories(ess_disparity_node_test PUBLIC /usr/src/googletest/googlemock/include/)
   ament_target_dependencies(ess_disparity_node_test rclcpp)
   ament_target_dependencies(ess_disparity_node_test isaac_ros_nitros)
 
@@ -67,5 +68,11 @@ if(BUILD_TESTING)
   add_launch_test(test/isaac_ros_ess_test.py TIMEOUT "300")
   add_launch_test(test/isaac_ros_ess_test_1_16HD_model.py TIMEOUT "300")
 endif()
+
+
+# Embed versioning information into installed files
+ament_index_get_resource(ISAAC_ROS_COMMON_CMAKE_PATH isaac_ros_common_cmake_path isaac_ros_common)
+include("${ISAAC_ROS_COMMON_CMAKE_PATH}/isaac_ros_common-version-info.cmake")
+generate_version_info(${PROJECT_NAME})
 
 ament_auto_package(INSTALL_TO_SHARE launch config)

@@ -34,7 +34,7 @@ def generate_launch_description():
             description='The absolute path to the ESS engine plan.'),
         DeclareLaunchArgument(
             'threshold',
-            default_value='0.35',
+            default_value='0.4',
             description='Threshold value ranges between 0.0 and 1.0 '
                         'for filtering disparity with confidence.'),
     ]
