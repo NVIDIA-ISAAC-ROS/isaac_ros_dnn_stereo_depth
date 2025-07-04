@@ -49,13 +49,22 @@ install(PROGRAMS scripts/isaac_ros_ess_depth_validation.py DESTINATION lib/${PRO
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(ament_cmake_gtest REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  # Force use of ROS2 vendor googletest to avoid version conflicts
+  set(CMAKE_IGNORE_PATH "/usr/src/googletest" ${CMAKE_IGNORE_PATH})
+  set(CMAKE_IGNORE_PATH "/usr/include/gtest" ${CMAKE_IGNORE_PATH})
+  set(CMAKE_IGNORE_PATH "/usr/include/gmock" ${CMAKE_IGNORE_PATH})
+
+  # Explicitly use ROS2 vendor googletest/gmock
+  include_directories(BEFORE /opt/ros/humble/src/gtest_vendor/include)
+  include_directories(BEFORE /opt/ros/humble/src/gmock_vendor/include)
 
   # Gtest for disparity node
   ament_add_gtest(ess_disparity_node_test test/ess_disparity_node_test.cpp)
   target_link_libraries(ess_disparity_node_test ess_disparity_node)
   target_include_directories(ess_disparity_node_test PUBLIC include/isaac_ros_ess/)
-  target_include_directories(ess_disparity_node_test PUBLIC /usr/src/googletest/googlemock/include/)
   ament_target_dependencies(ess_disparity_node_test rclcpp)
   ament_target_dependencies(ess_disparity_node_test isaac_ros_nitros)
 
