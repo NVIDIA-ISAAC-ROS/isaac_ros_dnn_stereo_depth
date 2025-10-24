@@ -58,8 +58,8 @@ if(BUILD_TESTING)
   set(CMAKE_IGNORE_PATH "/usr/include/gmock" ${CMAKE_IGNORE_PATH})
 
   # Explicitly use ROS2 vendor googletest/gmock
-  include_directories(BEFORE /opt/ros/humble/src/gtest_vendor/include)
-  include_directories(BEFORE /opt/ros/humble/src/gmock_vendor/include)
+  include_directories(BEFORE /opt/ros/$ENV{ROS_DISTRO}/src/gtest_vendor/include)
+  include_directories(BEFORE /opt/ros/$ENV{ROS_DISTRO}/src/gmock_vendor/include)
 
   # Gtest for disparity node
   ament_add_gtest(ess_disparity_node_test test/ess_disparity_node_test.cpp)

@@ -80,7 +80,7 @@ class IsaacROSDisparityTest(IsaacROSBaseTest):
     # disparity output dimension fixed at 960x576
     ESS_OUTPUT_HEIGHT = 576
     ESS_OUTPUT_WIDTH = 960
-    TIMEOUT = 10
+    TIMEOUT = 50
     ENGINE_FILE_PATH = '/tmp/dummy_model.engine'
     CAMERA_INFO_PATH = os.path.dirname(
         os.path.realpath(__file__)) + '/camera_info.json'

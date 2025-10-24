@@ -1,5 +1,5 @@
 // SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-// Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -491,7 +491,7 @@ gxf_result_t ESSInference::tick() {
     *output_model = *maybe_scaled_model;
     *output_conf = *maybe_scaled_model;
   } else {
-    GXF_LOG_DEBUG("Input message is missing intrinsics!");
+    GXF_LOG_WARNING("Input message is missing intrinsics!");
   }
 
   // Publish the data and confidence

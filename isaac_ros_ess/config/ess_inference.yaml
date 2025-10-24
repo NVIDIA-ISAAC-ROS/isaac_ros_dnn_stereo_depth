@@ -138,6 +138,7 @@ components:
     stream_priority: 0
     reserved_size: 1
     max_size: 1
+    nvtx_identifier: "ess_inference_stream"
 - type: nvidia::isaac::ESSInference
   parameters:
     output_name: frame
@@ -202,6 +203,7 @@ components:
     stream_priority: 0
     reserved_size: 1
     max_size: 1
+    nvtx_identifier: "disparity_thresholder_stream"
 - name: image_thresholder
   type: nvidia::isaac::VideoBufferThresholder
   parameters:
@@ -459,6 +461,7 @@ components:
     clock: clock
     stop_on_deadlock: false
     worker_thread_number: 4
+    worker_thread_name_id: "ess_inference"
 - type: nvidia::gxf::JobStatistics
   parameters:
     clock: clock

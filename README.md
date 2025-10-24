@@ -2,7 +2,7 @@
 
 NVIDIA-accelerated, deep learned stereo disparity estimation
 
-<div align="center"><a class="reference internal image-reference" href="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/main/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/ess3.0_conf0_r2b_storage_576p.gif/"><img alt="image" src="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/main/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/ess3.0_conf0_r2b_storage_576p.gif/" width="800px"/></a></div>
+<div align="center"><a class="reference internal image-reference" href="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/release-4.0/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/ess3.0_conf0_r2b_storage_576p.gif/"><img alt="image" src="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/release-4.0/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/ess3.0_conf0_r2b_storage_576p.gif/" width="800px"/></a></div>
 
 ---
 
@@ -15,40 +15,62 @@ Learn how to use this package by watching our on-demand webinar:
 
 ## Overview
 
-The vision depth perception problem is generally useful in many fields of robotics such as estimating
-the pose of a robotic arm in an object manipulation task, estimating distance of static or moving targets
-in autonomous robot navigation, tracking targets in delivery robots and so on.
-Isaac ROS DNN Stereo Depth is targeted at two Isaac applications,
-Isaac Manipulator and Isaac Perceptor. In Isaac Manipulator application, ESS is deployed in
-[Isaac ROS cuMotion](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_cumotion/index.html)
-package as a plug-in node to provide depth perception maps for robot arm motion planning and control.
-In this scenario, multi-camera stereo streams of industrial robot arms on a table task are passed to ESS to
-obtain corresponding depth streams. The depth streams are used to segment the relative distance of robot arms from
-corresponding objects on the table; thus providing signals for collision avoidance and fine-grain control.
-Similarly, the Isaac Perceptor application uses several Isaac ROS packages, namely,
-[Isaac ROS Nova](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_nova/index.html),
-[Isaac ROS Visual Slam](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_visual_slam/index.html),
-[Isaac ROS Stereo Depth (ESS)](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/index.html),
-[Isaac ROS Nvblox](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_nvblox/index.html)
-and [Isaac ROS Image Pipeline](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_image_pipeline/index.html).
+Deep Neural Network (DNN)–based stereo models have become essential for depth estimation because they
+overcome many of the fundamental limitations of classical and geometry-based stereo algorithms.
 
-ESS is deployed in Isaac Perceptor to enable Nvblox to create
-3D voxelized images of the robot surroundings. Specifically, the Nova developer suite provides 3x stereo-camera
-streams to Isaac Perceptor. Each stream corresponds to the front, left, and right cameras.
-In both Isaac Manipulator and Isaac Perceptor, a camera-specific image processing pipeline consisting of
-GPU-accelerated operations, provides rectification and undistortion of the input stereo images. All stereo stream image
-pair are time synchronized before before passing them to ESS. ESS node outputs corresponding depth maps for all three
-preprocessed image streams and combines the depth images with motion signals provided by cuVSLAM module.
-The combined depth and motion integrated signals are fed to Nvblox module to produce a dense 3D volumetric scene
-reconstruction of the surrounding scene.
+Traditional
+stereo matching relies on explicitly finding pixel correspondences between left and right images using
+handcrafted features. While effective in well-textured, ideal conditions, these approaches often fail in
+“ill-posed” regions such as areas with reflections, specular highlights, texture-less surfaces, repetitive
+patterns, occlusions, or even minor camera calibration errors. In such cases, classical algorithms may
+produce incomplete or inaccurate depth maps, or be forced to discard information entirely, especially
+when context-dependent filtering is not possible.
 
-<div align="center"><a class="reference internal image-reference" href="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/main/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess_nodegraph.png/"><img alt="image" src="https://media.githubusercontent.com/media/NVIDIA-ISAAC-ROS/.github/main/resources/isaac_ros_docs/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess_nodegraph.png/" width="800px"/></a></div>
+DNN-based stereo methods learn rich, hierarchical feature representations and context-aware
+matching costs directly from data. These models
+leverage semantic understanding and global scene context to infer depth, even in challenging environments
+where traditional correspondence measures break down. Through training, DNNs can implicitly account for
+real-world imperfections such as:
 
-Above, ESS node is used in a graph of nodes to provide a disparity prediction from an input left and right stereo image pair.
-The rectify and resize nodes pre-process the left and right frames to the appropriate resolution.
-The aspect ratio of the image is recommended to be maintained to avoid degrading the depth output quality.
-The graph for DNN encode, DNN inference, and DNN decode is included in the ESS node. Inference is performed using
-TensorRT, as the ESS DNN model is designed with optimizations supported by TensorRT.
+* calibration errors
+* exposure differences
+* hardware noise
+
+Training increases DNN’s ability to
+recognize and handle difficult regions like reflections or transparent surfaces. This results in more
+robust, accurate, and dense depth predictions.
+
+These advances are critical for robotics and autonomous
+systems, enabling applications where both speed and accuracy
+of depth perception are essential, such as:
+
+* precise robotic arm manipulation
+* reliable obstacle avoidance and navigation
+* robust target tracking in dynamic or cluttered environments
+
+DNN-based stereo methods consistently outperform classical techniques,
+making them the preferred choice for modern depth perception tasks.
+
+The superiority of DNN-based stereo methods is clearly demonstrated in the figure above where we compare
+the output from a classical stereo algorithm, SGM, with DNN-based methods, ESS, and FoundationStereo.
+
+SGM
+produces a very noisy and error-prone disparity map, while ESS and FoundationStereo produce much smoother
+and more accurate disparity maps. A closer look reveals that FoundationStereo produces the most accurate
+map because it is better at handling  the plant in the distance and the railings on the left with smoother
+estimates. Overall, you can see that FoundationStereo is better than ESS, and better than SGM, in terms of accuracy and quality.
+
+DNN‐based stereo systems begin by passing the left and right images through shared
+Convolutional backbones to extract multi‐scale feature maps that encode both texture and semantic
+information. These feature maps are then compared across potential disparities by constructing
+a learnable cost volume, which effectively represents the matching likelihood of each pixel at different
+disparities. Successive 3D Convolutional (or 2D convolution + aggregation) stages then regularize and
+refine this cost volume, integrating strong local cues—like edges and textures—and global scene
+context—such as object shapes and layout priors—to resolve ambiguities. Finally, a soft‐argmax or
+classification layer converts the refined cost volume into a dense disparity map, often followed by
+lightweight refinement modules that enforce sub-pixel accuracy and respect learned priors (for example, smoothness
+within objects, sharp transitions at boundaries), yielding a coherent estimate that gracefully handles
+challenging scenarios where classical algorithms falter.
 
 ## Isaac ROS NITROS Acceleration
 
@@ -56,12 +78,12 @@ This package is powered by [NVIDIA Isaac Transport for ROS (NITROS)](https://dev
 
 ## Performance
 
-| Sample Graph<br/><br/>                                                                                                                                                                                | Input Size<br/><br/>     | AGX Orin<br/><br/>                                                                                                                                                | Orin NX<br/><br/>                                                                                                                                                | x86_64 w/ RTX 4090<br/><br/>                                                                                                                                       |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_ess_node.py)<br/><br/><br/>Full<br/><br/>          | 576p<br/><br/><br/><br/> | [72.5 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-agx_orin.json)<br/><br/><br/>17 ms @ 30Hz<br/><br/>       | [42.1 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-orin_nx.json)<br/><br/><br/>26 ms @ 30Hz<br/><br/>       | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_node-x86-4090.json)<br/><br/><br/>2.1 ms @ 30Hz<br/><br/>        |
-| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_light_ess_node.py)<br/><br/><br/>Light<br/><br/>   | 288p<br/><br/><br/><br/> | [304 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_light_ess_node-agx_orin.json)<br/><br/><br/>5.9 ms @ 30Hz<br/><br/> | [143 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_light_ess_node-orin_nx.json)<br/><br/><br/>9.6 ms @ 30Hz<br/><br/> | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_light_ess_node-x86-4090.json)<br/><br/><br/>1.6 ms @ 30Hz<br/><br/>  |
-| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_ess_graph.py)<br/><br/><br/>Full<br/><br/>        | 576p<br/><br/><br/><br/> | [89.8 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-agx_orin.json)<br/><br/><br/>19 ms @ 30Hz<br/><br/>      | [35.2 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-orin_nx.json)<br/><br/><br/>34 ms @ 30Hz<br/><br/>      | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_ess_graph-x86-4090.json)<br/><br/><br/>5.8 ms @ 30Hz<br/><br/>       |
-| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_light_ess_graph.py)<br/><br/><br/>Light<br/><br/> | 288p<br/><br/><br/><br/> | [184 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_light_ess_graph-agx_orin.json)<br/><br/><br/>14 ms @ 30Hz<br/><br/> | [128 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_light_ess_graph-orin_nx.json)<br/><br/><br/>14 ms @ 30Hz<br/><br/> | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/main/results/isaac_ros_light_ess_graph-x86-4090.json)<br/><br/><br/>5.2 ms @ 30Hz<br/><br/> |
+| Sample Graph<br/><br/>                                                                                                                                                                                       | Input Size<br/><br/>   | AGX Thor<br/><br/>                                                                                                                                                       | x86_64 w/ RTX 5090<br/><br/>                                                                                                                                              |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_ess_node.py)<br/><br/><br/>Full<br/><br/>          | 576p<br/><br/>         | [178 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_ess_node-agx_thor.json)<br/><br/><br/>22 ms @ 30Hz<br/><br/>        | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_ess_node-x86-5090.json)<br/><br/><br/>5.6 ms @ 30Hz<br/><br/>        |
+| [DNN Stereo Disparity Node](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_light_ess_node.py)<br/><br/><br/>Light<br/><br/>   | 288p<br/><br/>         | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_light_ess_node-agx_thor.json)<br/><br/><br/>9.4 ms @ 30Hz<br/><br/> | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_light_ess_node-x86-5090.json)<br/><br/><br/>5.0 ms @ 30Hz<br/><br/>  |
+| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_ess_graph.py)<br/><br/><br/>Full<br/><br/>        | 576p<br/><br/>         | [73.6 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_ess_graph-agx_thor.json)<br/><br/><br/>29 ms @ 30Hz<br/><br/>      | [348 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_ess_graph-x86-5090.json)<br/><br/><br/>8.5 ms @ 30Hz<br/><br/>       |
+| [DNN Stereo Disparity Graph](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/benchmarks/isaac_ros_ess_benchmark/scripts/isaac_ros_light_ess_graph.py)<br/><br/><br/>Light<br/><br/> | 288p<br/><br/>         | [219 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_light_ess_graph-agx_thor.json)<br/><br/><br/>17 ms @ 30Hz<br/><br/> | [350 fps](https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_benchmark/blob/release-4.0/results/isaac_ros_light_ess_graph-x86-5090.json)<br/><br/><br/>7.3 ms @ 30Hz<br/><br/> |
 
 ---
 
@@ -78,7 +100,11 @@ Please visit the [Isaac ROS Documentation](https://nvidia-isaac-ros.github.io/re
   * [Try More Examples](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess/index.html#try-more-examples)
   * [Troubleshooting](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess/index.html#troubleshooting)
   * [API](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_ess/index.html#api)
+* [`isaac_ros_foundationstereo`](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_foundationstereo/index.html)
+  * [Quickstart](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_foundationstereo/index.html#quickstart)
+  * [Try More Examples](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_foundationstereo/index.html#try-more-examples)
+  * [API](https://nvidia-isaac-ros.github.io/repositories_and_packages/isaac_ros_dnn_stereo_depth/isaac_ros_foundationstereo/index.html#api)
 
 ## Latest
 
-Update 2024-09-26: Updated for ESS 4.1 trained on additional samples
+Update 2025-10-24: Added FoundationStereo package
