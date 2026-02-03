@@ -24,13 +24,13 @@
 #include <limits>
 
 #include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/msg/image.hpp"
 #include "std_msgs/msg/header.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "message_filters/synchronizer.h"
 #include "message_filters/sync_policies/exact_time.h"
 
 #include "isaac_ros_common/qos.hpp"
+#include "isaac_ros_common/cuda_stream.hpp"
 #include "isaac_ros_managed_nitros/managed_nitros_subscriber.hpp"
 #include "isaac_ros_managed_nitros/managed_nitros_publisher.hpp"
 #include "isaac_ros_managed_nitros/managed_nitros_message_filters_subscriber.hpp"
@@ -38,6 +38,8 @@
 #include "isaac_ros_nitros_camera_info_type/nitros_camera_info.hpp"
 #include "isaac_ros_nitros_disparity_image_type/nitros_disparity_image.hpp"
 #include "isaac_ros_nitros_disparity_image_type/nitros_disparity_image_builder.hpp"
+
+#include "isaac_ros_foundationstereo/filter_disparity.cu.hpp"
 
 namespace nvidia
 {

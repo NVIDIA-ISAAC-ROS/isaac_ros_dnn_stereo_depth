@@ -15,10 +15,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/exact_time.h>
 #include "isaac_ros_foundationstereo/foundationstereo_decoder_node.hpp"
-#include <opencv2/opencv.hpp>
 #include "isaac_ros_nitros/types/type_adapter_nitros_context.hpp"
 
 namespace nvidia
@@ -74,7 +71,7 @@ FoundationStereoDecoderNode::FoundationStereoDecoderNode(const rclcpp::NodeOptio
   min_disparity_{declare_parameter<double>("min_disparity", 0.0)},
   max_disparity_{declare_parameter<double>("max_disparity", 10000.0)}
 {
-  cudaStreamCreate(&stream_);
+  CHECK_CUDA_ERROR(cudaStreamCreate(&stream_), "Failed to create CUDA stream");
 
   // Subscribe to topics
   tensor_nitros_sub_.subscribe(this, "tensor_sub");
@@ -165,16 +162,33 @@ void FoundationStereoDecoderNode::ProcessTensorAndCameraInfo(
 
   // Allocate GPU buffer and copy tensor data
   void * gpu_data;
-  cudaMallocAsync(&gpu_data, tensor.GetTensorSize(), stream_);
-  cudaMemcpyAsync(
-    gpu_data, tensor.GetBuffer(),
-    tensor.GetTensorSize(), cudaMemcpyDefault, stream_);
+  CHECK_CUDA_ERROR(
+    cudaMallocAsync(&gpu_data, tensor.GetTensorSize(), stream_),
+    "Failed to allocate GPU buffer for disparity tensor");
+  CHECK_CUDA_ERROR(
+    cudaMemcpyAsync(
+      gpu_data, tensor.GetBuffer(),
+      tensor.GetTensorSize(), cudaMemcpyDefault, stream_),
+    "Failed to copy disparity tensor to GPU");
+
+  // Filter disparity map in-place on GPU
+  nvidia::isaac_ros::foundationstereo::FilterDisparity(
+    static_cast<float *>(gpu_data),
+    static_cast<uint32_t>(width), static_cast<uint32_t>(height),
+    static_cast<float>(min_disparity_), static_cast<float>(max_disparity_),
+    stream_);
+
+  // Post-launch CUDA error check to surface kernel launch errors
+  CHECK_CUDA_ERROR(cudaGetLastError(), "CUDA error after FilterDisparity kernel");
 
   // Create NitrosDisparityImage using the builder pattern
   auto nitros_disparity_image = nvidia::isaac_ros::nitros::NitrosDisparityImageBuilder()
     .WithHeader(header)
     .WithDimensions(height, width)
     .WithGpuData(gpu_data)
+    .WithReleaseCallback([gpu_data, stream = stream_]() {
+      cudaFreeAsync(gpu_data, stream);
+    })
     .WithDisparityParameters(
       ros_camera_info.p[0],  // focal_length_x from projection matrix
       -ros_camera_info.p[3] / ros_camera_info.p[0],  // baseline from projection matrix
@@ -188,7 +202,7 @@ void FoundationStereoDecoderNode::ProcessTensorAndCameraInfo(
 
 FoundationStereoDecoderNode::~FoundationStereoDecoderNode()
 {
-  cudaStreamDestroy(stream_);
+  CHECK_CUDA_ERROR(cudaStreamDestroy(stream_), "Failed to destroy CUDA stream");
 }
 
 }  // namespace dnn_stereo_depth
