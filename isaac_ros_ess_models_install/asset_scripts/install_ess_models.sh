@@ -32,9 +32,19 @@ ESS_MODEL_URL="https://api.ngc.nvidia.com/v2/models/nvidia/isaac/dnn_stereo_disp
 
 source "${ISAAC_ROS_ASSET_EULA_SH:-isaac_ros_asset_eula.sh}"
 
-# Download and extract model archive
-echo "Downloading ESS onnx file."
-wget -nv "${ESS_MODEL_URL}" -O "${MODELS_DIR}/${ARCHIVE_NAME}"
+# Remove old assets dir to prevent errors from tar extraction
+rm -rf "${ASSET_DIR}"
+
+isaac_ros_common_download_asset --url "${ESS_MODEL_URL}" --output-path "${MODELS_DIR}/${ARCHIVE_NAME}" --cache-path "${ISAAC_ROS_ESS_MODEL_ARCHIVE}"
+ESS_MODEL_DOWNLOAD_RESULT=$?
+if [[ -n ${ISAAC_ROS_ASSETS_TEST} ]]; then
+  exit ${ESS_MODEL_DOWNLOAD_RESULT}
+elif [[ ${ESS_MODEL_DOWNLOAD_RESULT} -ne 0 ]]; then
+  echo "ERROR: Failed to download ESS model."
+  exit 1
+fi
+
+# Extract archive into isaac_ros_assets
 tar -xvf "${MODELS_DIR}/${ARCHIVE_NAME}" -C "${MODELS_DIR}"
 
 # Create ESS engine

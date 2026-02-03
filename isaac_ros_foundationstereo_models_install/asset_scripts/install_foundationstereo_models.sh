@@ -12,6 +12,13 @@
 # * The script must be called with the --eula argument prior to downloading.
 
 set -e
+if [ -n "$TENSORRT_COMMAND" ]; then
+  # If a custom tensorrt is used, ensure it's lib directory is added to the LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(readlink -f $(dirname ${TENSORRT_COMMAND})/../../../lib/$(uname -p)-linux-gnu/)"
+fi
+if [ -z "$ISAAC_ROS_WS" ] && [ -n "$ISAAC_ROS_ASSET_MODEL_PATH" ]; then
+  ISAAC_ROS_WS="$(readlink -f $(dirname ${ISAAC_ROS_ASSET_MODEL_PATH})/../../../..)"
+fi
 
 # Available model configurations
 declare -A MODEL_CONFIGS
@@ -78,18 +85,23 @@ ASSET_INSTALL_PATHS="${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine"
 
 # Pass arguments to the EULA helper
 set -- "${PASSTHRU_ARGS[@]}"
-source "isaac_ros_asset_eula.sh"
+source "${ISAAC_ROS_ASSET_EULA_SH:-isaac_ros_asset_eula.sh}"
 
 # Create directories if they don't exist
 mkdir -p ${ASSET_DIR}
 
 # Download ONNX model file
-echo "Downloading FoundationStereo ${SELECTED_MODEL} model (${RESOLUTION} resolution)."
-wget "${FOUNDATIONSTEREO_MODEL_URL}" -O "${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx"
+isaac_ros_common_download_asset --url "${FOUNDATIONSTEREO_MODEL_URL}" --output-path "${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx" --cache-path "${ISAAC_ROS_FOUNDATIONSTEREO_MODEL}"
+FOUNDATIONSTEREO_MODEL_DOWNLOAD_RESULT=$?
+if [[ -n ${ISAAC_ROS_ASSETS_TEST} ]]; then
+  exit ${FOUNDATIONSTEREO_MODEL_DOWNLOAD_RESULT}
+elif [[ ${FOUNDATIONSTEREO_MODEL_DOWNLOAD_RESULT} -ne 0 ]]; then
+  echo "ERROR: Failed to download FoundationStereo model."
+  exit 1
+fi
 
 # Create FoundationStereo engine using TensorRT
 echo "Converting FoundationStereo ${SELECTED_MODEL} onnx file to engine file."
-/usr/src/tensorrt/bin/trtexec \
+${TENSORRT_COMMAND:-/usr/src/tensorrt/bin/trtexec} \
     --onnx=${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx \
-    --saveEngine=${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine \
-    --fp16
+    --saveEngine=${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine
