@@ -22,8 +22,8 @@ fi
 
 # Available model configurations
 declare -A MODEL_CONFIGS
-MODEL_CONFIGS["low_res"]="320x736:deployable_foundationstereo_small_320x736_v1.0.onnx"
-MODEL_CONFIGS["high_res"]="576x960:deployable_foundationstereo_small_576x960_v1.0.onnx"
+MODEL_CONFIGS["low_res"]="320x736:deployable_foundationstereo_small_320x736_v2.0.onnx"
+MODEL_CONFIGS["high_res"]="576x960:deployable_foundationstereo_small_576x960_v2.0.onnx"
 
 # Default model - use environment variable if set and valid, otherwise use hardcoded default
 if [[ -n "$FOUNDATIONSTEREO_MODEL_RES" ]] && [[ -n "${MODEL_CONFIGS[$FOUNDATIONSTEREO_MODEL_RES]}" ]]; then
@@ -76,7 +76,7 @@ IFS=':' read -r RESOLUTION MODEL_FILE_NAME <<< "${MODEL_CONFIGS[$SELECTED_MODEL]
 IFS='x' read -r HEIGHT WIDTH <<< "$RESOLUTION"
 
 ASSET_NAME="foundationstereo"
-VERSION="deployable_foundation_stereo_small_v1.0"
+VERSION="deployable_v2.0"
 EULA_URL="https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/foundationstereo"
 MODELS_DIR="${ISAAC_ROS_WS}/isaac_ros_assets/models/${ASSET_NAME}"
 ASSET_DIR="${MODELS_DIR}/${VERSION}"
@@ -104,4 +104,4 @@ fi
 echo "Converting FoundationStereo ${SELECTED_MODEL} onnx file to engine file."
 ${TENSORRT_COMMAND:-/usr/src/tensorrt/bin/trtexec} \
     --onnx=${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx \
-    --saveEngine=${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine
+    --saveEngine=${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine \
