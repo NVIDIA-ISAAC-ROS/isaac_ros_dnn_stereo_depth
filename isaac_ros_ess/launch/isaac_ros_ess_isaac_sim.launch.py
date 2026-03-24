@@ -36,17 +36,27 @@ def generate_launch_description():
             default_value='0.0',
             description='Threshold value ranges between 0.0 and 1.0 '
                         'for filtering disparity with confidence.'),
+        DeclareLaunchArgument(
+            'input_layer_width',
+            default_value='960',
+            description='Input layer width'),
+        DeclareLaunchArgument(
+            'input_layer_height',
+            default_value='576',
+            description='Input layer height'),
     ]
     engine_file_path = LaunchConfiguration('engine_file_path')
     threshold = LaunchConfiguration('threshold')
+    input_layer_width = LaunchConfiguration('input_layer_width')
+    input_layer_height = LaunchConfiguration('input_layer_height')
 
     image_resize_node_right = ComposableNode(
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         name='image_resize_node_right',
         parameters=[{
-                'output_width': 960,
-                'output_height': 576,
+                'output_width': input_layer_width,
+                'output_height': input_layer_height,
                 'encoding_desired': 'rgb8',
         }],
         remappings=[
@@ -61,8 +71,8 @@ def generate_launch_description():
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         name='image_resize_node_left',
         parameters=[{
-                'output_width': 960,
-                'output_height': 576,
+                'output_width': input_layer_width,
+                'output_height': input_layer_height,
                 'encoding_desired': 'rgb8',
         }],
         remappings=[
@@ -78,8 +88,8 @@ def generate_launch_description():
         plugin='nvidia::isaac_ros::dnn_stereo_depth::ESSDisparityNode',
         parameters=[{'engine_file_path': engine_file_path,
                      'threshold': threshold,
-                     'input_layer_width': 960,
-                     'input_layer_height': 576}],
+                     'input_layer_width': input_layer_width,
+                     'input_layer_height': input_layer_height}],
         remappings=[('left/image_rect', 'front_stereo_camera/left/image_resize'),
                     ('left/camera_info',
                      'front_stereo_camera/left/camera_info_resize'),
