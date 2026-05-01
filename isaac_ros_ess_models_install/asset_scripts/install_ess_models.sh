@@ -14,8 +14,8 @@
 set -e
 
 if [ -n "$TENSORRT_COMMAND" ]; then
-  # If a custom tensorrt is used, ensure it's lib directory is added to the LD_LIBRARY_PATH
-  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(readlink -f $(dirname ${TENSORRT_COMMAND})/../../../lib/x86_64-linux-gnu/)"
+  # If a custom tensorrt is used, ensure its lib directory is added to the LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(readlink -f "$(dirname "${TENSORRT_COMMAND}")/../../../lib/$(uname -p)-linux-gnu/")"
   echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
 fi
 if [ -z "$ISAAC_ROS_WS" ] && [ -n "$ISAAC_ROS_ASSET_MODEL_PATH" ]; then

@@ -30,11 +30,17 @@ import rclpy
 from sensor_msgs.msg import CameraInfo, Image
 from stereo_msgs.msg import DisparityImage
 
+import tensorrt as trt
+
+
+_TRT_VER = trt.__version__.replace('.', '_')
+_ENGINE_FILE_PATH = f'/tmp/dummy_model_{_TRT_VER}.engine'
+
 
 @pytest.mark.rostest
 def generate_test_description():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    engine_file_path = '/tmp/dummy_model.engine'
+    engine_file_path = _ENGINE_FILE_PATH
     if not os.path.isfile(engine_file_path):
         args = [
             '/usr/src/tensorrt/bin/trtexec',
@@ -81,7 +87,7 @@ class IsaacROSDisparityTest(IsaacROSBaseTest):
     ESS_OUTPUT_HEIGHT = 576
     ESS_OUTPUT_WIDTH = 960
     TIMEOUT = 50
-    ENGINE_FILE_PATH = '/tmp/dummy_model.engine'
+    ENGINE_FILE_PATH = _ENGINE_FILE_PATH
     CAMERA_INFO_PATH = os.path.dirname(
         os.path.realpath(__file__)) + '/camera_info.json'
 
