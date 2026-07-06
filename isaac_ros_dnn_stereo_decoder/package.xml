@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ SPDX-License-Identifier: Apache-2.0
 
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>isaac_ros_foundationstereo</name>
+  <name>isaac_ros_dnn_stereo_decoder</name>
   <version>4.5.0</version>
-  <description>FoundationStereo model processing</description>
+  <description>DNN stereo model output decoding</description>
 
   <maintainer email="isaac-ros-maintainers@nvidia.com">Isaac ROS Maintainers</maintainer>
   <license>Apache-2.0</license>
@@ -31,12 +31,21 @@ SPDX-License-Identifier: Apache-2.0
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>isaac_ros_foundationstereo_models_install</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>message_filters</depend>
+  <depend>isaac_ros_nitros</depend>
+  <depend>isaac_ros_nitros_image_type</depend>
+  <depend>isaac_ros_nitros_disparity_image_type</depend>
+  <depend>isaac_ros_nitros_tensor_list_type</depend>
+  <depend>isaac_ros_tensor_list_interfaces</depend>
+  <depend>sensor_msgs</depend>
+  <depend>gxf_isaac_messages</depend>
+  <depend>cuda-toolkit</depend>
 
   <build_depend>isaac_ros_common</build_depend>
 
   <exec_depend>isaac_ros_dnn_image_encoder</exec_depend>
-  <exec_depend>isaac_ros_dnn_stereo_decoder</exec_depend>
   <exec_depend>isaac_ros_image_proc</exec_depend>
   <exec_depend>isaac_ros_stereo_image_proc</exec_depend>
   <exec_depend>isaac_ros_tensor_rt</exec_depend>

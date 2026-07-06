@@ -32,6 +32,12 @@ class ESSEngineGenerator:
         else:
             self.arch = arch
 
+        self.trtexec_path = '/usr/src/tensorrt/bin/trtexec'
+        if os.environ.get('TENSORRT_COMMAND', None):
+            from python.runfiles import Runfiles
+            _bazel_runfiles = Runfiles.Create()
+            self.trtexec_path = _bazel_runfiles.Rlocation(os.environ['TENSORRT_COMMAND'])
+
     def generate(self):
         supported_arch = ['x86_64', 'aarch64']
         model_file = os.path.abspath(self.onnx_model)
@@ -44,7 +50,7 @@ class ESSEngineGenerator:
                       self.arch + '/ess_plugins.so')
             engine_file = model_file.replace('.onnx', '.engine')
 
-            response = subprocess.call('/usr/src/tensorrt/bin/trtexec' +
+            response = subprocess.call(self.trtexec_path +
                                        ' --onnx=' + self.onnx_model +
                                        ' --saveEngine=' + engine_file +
                                        ' --fp16' +

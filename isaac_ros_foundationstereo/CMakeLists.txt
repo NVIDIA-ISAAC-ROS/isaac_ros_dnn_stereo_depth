@@ -16,38 +16,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.22.1)
-project(isaac_ros_foundationstereo LANGUAGES C CXX CUDA)
+project(isaac_ros_foundationstereo LANGUAGES C CXX)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 find_package(ament_cmake_auto REQUIRED)
-find_package(CUDAToolkit REQUIRED) # Ensure CUDA imported targets (e.g., CUDA::nvtx3 / CUDA::nvToolsExt) are available
 ament_auto_find_build_dependencies()
-
-# NVTX
-option(USE_NVTX "Enable NVTX markers for improved profiling (if available)" ON)
-if(USE_NVTX)
-    add_definitions(-DUSE_NVTX)
-    link_directories("${CUDA_TOOLKIT_ROOT_DIR}/lib64")
-    link_libraries("CUDA::nvtx3")
-endif()
-
-# FoundationStereoDecoderNode
-ament_auto_add_library(foundationstereo_decoder_node SHARED
-  src/foundationstereo_decoder_node.cpp
-  src/filter_disparity.cu.cpp)
-rclcpp_components_register_nodes(foundationstereo_decoder_node "nvidia::isaac_ros::dnn_stereo_depth::FoundationStereoDecoderNode")
-set(node_plugins "${node_plugins}nvidia::isaac_ros::dnn_stereo_depth::FoundationStereoDecoderNode;$<TARGET_FILE:foundationstereo_decoder_node>\n")
-target_include_directories(foundationstereo_decoder_node PUBLIC include)
-
-# Mark as CUDA files with non-standard extensions
-set_source_files_properties(
-  src/filter_disparity.cu.cpp
-  include/isaac_ros_foundationstereo/filter_disparity.cu.hpp
-  PROPERTIES LANGUAGE CUDA
-)
 
 # Install visualizer python scripts
 ament_python_install_package(${PROJECT_NAME})
@@ -59,4 +35,4 @@ ament_index_get_resource(ISAAC_ROS_COMMON_CMAKE_PATH isaac_ros_common_cmake_path
 include("${ISAAC_ROS_COMMON_CMAKE_PATH}/isaac_ros_common-version-info.cmake")
 generate_version_info(${PROJECT_NAME})
 
-ament_auto_package(INSTALL_TO_SHARE launch)
+ament_auto_package(INSTALL_TO_SHARE launch config)

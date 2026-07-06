@@ -22,7 +22,7 @@ Proof-Of-Life test for the Isaac ROS FoundationStereo package.
        - Image preprocessing nodes for left and right images
        - Tensor processing nodes
        - TensorRT inference node
-       - FoundationStereo decoder node
+       - DNN stereo decoder node
     2. Loads sample stereo images and publishes them
     3. Subscribes to the disparity output topic
     4. Verifies that the received disparity output has correct dimensions and encoding
@@ -75,31 +75,14 @@ def generate_test_description():
             'input_height': IMAGE_HEIGHT,
             'output_width': IMAGE_WIDTH,
             'output_height': IMAGE_HEIGHT,
-            'keep_aspect_ratio': True,
+            'keep_aspect_ratio': False,
             'encoding_desired': 'rgb8',
-            'disable_padding': True
         }],
         remappings=[
             ('image', 'left/image_rect'),
             ('camera_info', 'left/camera_info_rect'),
             ('resize/image', 'left/image_resize'),
             ('resize/camera_info', 'left/camera_info_resize'),
-        ]
-    )
-
-    left_pad_node = ComposableNode(
-        name='left_pad_node',
-        package='isaac_ros_image_proc',
-        plugin='nvidia::isaac_ros::image_proc::PadNode',
-        namespace=IsaacROSFoundationStereoTest.generate_namespace(),
-        parameters=[{
-            'output_image_width': IMAGE_WIDTH,
-            'output_image_height': IMAGE_HEIGHT,
-            'border_type': 'REPLICATE'
-        }],
-        remappings=[
-            ('image', 'left/image_resize'),
-            ('padded_image', 'left/image_pad'),
         ]
     )
 
@@ -114,7 +97,7 @@ def generate_test_description():
             'encoding_desired': 'rgb8',
         }],
         remappings=[
-            ('image_raw', 'left/image_pad'),
+            ('image_raw', 'left/image_resize'),
             ('image', 'left/image_rgb')
         ]
     )
@@ -191,31 +174,14 @@ def generate_test_description():
             'input_height': IMAGE_HEIGHT,
             'output_width': IMAGE_WIDTH,
             'output_height': IMAGE_HEIGHT,
-            'keep_aspect_ratio': True,
+            'keep_aspect_ratio': False,
             'encoding_desired': 'rgb8',
-            'disable_padding': True
         }],
         remappings=[
             ('image', 'right/image_rect'),
             ('camera_info', 'right/camera_info_rect'),
             ('resize/image', 'right/image_resize'),
             ('resize/camera_info', 'right/camera_info_resize'),
-        ]
-    )
-
-    right_pad_node = ComposableNode(
-        name='right_pad_node',
-        package='isaac_ros_image_proc',
-        plugin='nvidia::isaac_ros::image_proc::PadNode',
-        namespace=IsaacROSFoundationStereoTest.generate_namespace(),
-        parameters=[{
-            'output_image_width': IMAGE_WIDTH,
-            'output_image_height': IMAGE_HEIGHT,
-            'border_type': 'REPLICATE'
-        }],
-        remappings=[
-            ('image', 'right/image_resize'),
-            ('padded_image', 'right/image_pad'),
         ]
     )
 
@@ -230,7 +196,7 @@ def generate_test_description():
             'encoding_desired': 'rgb8',
         }],
         remappings=[
-            ('image_raw', 'right/image_pad'),
+            ('image_raw', 'right/image_resize'),
             ('image', 'right/image_rgb')
         ]
     )
@@ -332,14 +298,16 @@ def generate_test_description():
         }]
     )
 
-    # FoundationStereo decoder node
-    foundationstereo_decoder_node = ComposableNode(
-        name='foundationstereo_decoder',
-        package='isaac_ros_foundationstereo',
-        plugin='nvidia::isaac_ros::dnn_stereo_depth::FoundationStereoDecoderNode',
+    # DNN stereo decoder node
+    dnn_stereo_decoder_node = ComposableNode(
+        name='dnn_stereo_decoder',
+        package='isaac_ros_dnn_stereo_decoder',
+        plugin='nvidia::isaac_ros::dnn_stereo_depth::DNNStereoDecoderNode',
         namespace=IsaacROSFoundationStereoTest.generate_namespace(),
         parameters=[{
-            'disparity_tensor_name': 'disparity'
+            'disparity_tensor_name': 'disparity',
+            'min_disparity': 0.0,
+            'max_disparity': 10000.0,
         }],
         remappings=[
             ('right/camera_info', 'right/camera_info_resize')
@@ -352,11 +320,11 @@ def generate_test_description():
         package='rclcpp_components',
         executable='component_container_mt',
         composable_node_descriptions=[
-            left_resize_node, left_pad_node, left_format_node, left_normalize_node,
+            left_resize_node, left_format_node, left_normalize_node,
             left_tensor_node, left_planar_node, left_reshape_node,
-            right_resize_node, right_pad_node, right_format_node, right_normalize_node,
+            right_resize_node, right_format_node, right_normalize_node,
             right_tensor_node, right_planar_node, right_reshape_node,
-            tensor_pair_sync_node, tensor_rt_node, foundationstereo_decoder_node
+            tensor_pair_sync_node, tensor_rt_node, dnn_stereo_decoder_node
         ],
         output='screen'
     )
@@ -452,9 +420,11 @@ class IsaacROSFoundationStereoTest(IsaacROSBaseTest):
             self.assertEqual(disparity.image.width, IMAGE_WIDTH)
             self.assertEqual(disparity.image.encoding, '32FC1')
             self.assertEqual(disparity.image.step, disparity.image.width * 4)
-            self.assertAlmostEqual(disparity.f, camera_info.p[0])
-            self.assertAlmostEqual(disparity.t, -camera_info.p[3] / camera_info.p[0])
+            resize_scale = IMAGE_WIDTH / camera_info.width
+            self.assertAlmostEqual(disparity.f, camera_info.p[0] * resize_scale, places=5)
+            self.assertAlmostEqual(disparity.t, -camera_info.p[3] / camera_info.p[0], places=5)
             self.assertAlmostEqual(disparity.min_disparity, 0.0)
+            self.assertAlmostEqual(disparity.max_disparity, 10000.0)
 
         finally:
             self.node.destroy_subscription(subs)
