@@ -75,6 +75,14 @@ def generate_launch_description():
             'force_engine_update',
             default_value='False',
             description='Whether TensorRT should update the TensorRT engine file or not'),
+        DeclareLaunchArgument(
+            'min_disparity',
+            default_value='0.0',
+            description='Minimum disparity value (inclusive)'),
+        DeclareLaunchArgument(
+            'max_disparity',
+            default_value='10000.0',
+            description='Maximum disparity value (inclusive)'),
     ]
 
     # Image preprocessing parameters
@@ -92,6 +100,8 @@ def generate_launch_description():
     output_binding_names = LaunchConfiguration('output_binding_names')
     verbose = LaunchConfiguration('verbose')
     force_engine_update = LaunchConfiguration('force_engine_update')
+    min_disparity = LaunchConfiguration('min_disparity')
+    max_disparity = LaunchConfiguration('max_disparity')
 
     # Left image preprocessing nodes
     left_rectify_node = ComposableNode(
@@ -120,30 +130,14 @@ def generate_launch_description():
             'input_height': input_image_height,
             'output_width': model_input_width,
             'output_height': model_input_height,
-            'keep_aspect_ratio': True,
+            'keep_aspect_ratio': False,
             'encoding_desired': 'rgb8',
-            'disable_padding': True
         }],
         remappings=[
             ('image', 'left/image_rect'),
             ('camera_info', 'left/camera_info_rect'),
             ('resize/image', 'left/image_resize'),
             ('resize/camera_info', 'left/camera_info_resize'),
-        ]
-    )
-
-    left_pad_node = ComposableNode(
-        name='left_pad_node',
-        package='isaac_ros_image_proc',
-        plugin='nvidia::isaac_ros::image_proc::PadNode',
-        parameters=[{
-            'output_image_width': model_input_width,
-            'output_image_height': model_input_height,
-            'border_type': 'REPLICATE'
-        }],
-        remappings=[
-            ('image', 'left/image_resize'),
-            ('padded_image', 'left/image_pad'),
         ]
     )
 
@@ -157,7 +151,7 @@ def generate_launch_description():
             'encoding_desired': 'rgb8',
         }],
         remappings=[
-            ('image_raw', 'left/image_pad'),
+            ('image_raw', 'left/image_resize'),
             ('image', 'left/image_rgb')
         ]
     )
@@ -246,30 +240,14 @@ def generate_launch_description():
             'input_height': input_image_height,
             'output_width': model_input_width,
             'output_height': model_input_height,
-            'keep_aspect_ratio': True,
+            'keep_aspect_ratio': False,
             'encoding_desired': 'rgb8',
-            'disable_padding': True
         }],
         remappings=[
             ('image', 'right/image_rect'),
             ('camera_info', 'right/camera_info_rect'),
             ('resize/image', 'right/image_resize'),
             ('resize/camera_info', 'right/camera_info_resize'),
-        ]
-    )
-
-    right_pad_node = ComposableNode(
-        name='right_pad_node',
-        package='isaac_ros_image_proc',
-        plugin='nvidia::isaac_ros::image_proc::PadNode',
-        parameters=[{
-            'output_image_width': model_input_width,
-            'output_image_height': model_input_height,
-            'border_type': 'REPLICATE'
-        }],
-        remappings=[
-            ('image', 'right/image_resize'),
-            ('padded_image', 'right/image_pad'),
         ]
     )
 
@@ -283,7 +261,7 @@ def generate_launch_description():
             'encoding_desired': 'rgb8',
         }],
         remappings=[
-            ('image_raw', 'right/image_pad'),
+            ('image_raw', 'right/image_resize'),
             ('image', 'right/image_rgb')
         ]
     )
@@ -380,12 +358,15 @@ def generate_launch_description():
     )
 
     # Disparity decoder node
-    foundationstereo_decoder_node = ComposableNode(
-        name='foundationstereo_decoder',
-        package='isaac_ros_foundationstereo',
-        plugin='nvidia::isaac_ros::dnn_stereo_depth::FoundationStereoDecoderNode',
+    dnn_stereo_decoder_node = ComposableNode(
+        name='dnn_stereo_decoder',
+        package='isaac_ros_dnn_stereo_decoder',
+        plugin='nvidia::isaac_ros::dnn_stereo_depth::DNNStereoDecoderNode',
         parameters=[{
             'disparity_tensor_name': 'disparity',
+            'min_disparity': min_disparity,
+            'max_disparity': max_disparity,
+            'cache_camera_info': True
         }],
         remappings=[
             ('right/camera_info', 'right/camera_info_resize')
@@ -399,15 +380,15 @@ def generate_launch_description():
         executable='component_container_mt',
         composable_node_descriptions=[
             # Left preprocessing pipeline
-            left_rectify_node, left_resize_node, left_pad_node, left_format_node,
+            left_rectify_node, left_resize_node, left_format_node,
             left_normalize_node, left_tensor_node, left_planar_node,
             left_reshape_node,
             # Right preprocessing pipeline
-            right_rectify_node, right_resize_node, right_pad_node, right_format_node,
+            right_rectify_node, right_resize_node, right_format_node,
             right_normalize_node, right_tensor_node, right_planar_node,
             right_reshape_node,
             # Preprocessing, inference and decoding
-            tensor_pair_sync_node, tensor_rt_node, foundationstereo_decoder_node
+            tensor_pair_sync_node, tensor_rt_node, dnn_stereo_decoder_node
         ],
         output='screen'
     )

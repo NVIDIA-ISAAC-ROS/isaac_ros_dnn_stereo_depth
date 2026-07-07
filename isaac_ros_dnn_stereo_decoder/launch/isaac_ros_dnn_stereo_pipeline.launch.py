@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES
-# Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: NVIDIA CORPORATION & AFFILIATES.
+# Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,29 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""
+Launch a full DNN Stereo Disparity pipeline.
+
+This pipeline performs:
+- Image preprocessing for left/right images (format conversion, resize, pad, normalize)
+- Tensor preparation (image to tensor, interleaved to planar, reshape)
+- Tensor pair synchronization
+- TensorRT inference producing a disparity tensor
+- DNNStereoDecoder to convert disparity tensor into a `NitrosDisparityImage`
+
+Expected launch arguments:
+- image_width: input/output width used by the model
+- image_height: input/output height used by the model
+- model_file_path: path to ONNX model
+- engine_file_path: path to TensorRT engine
+- min_disparity: minimum valid disparity value (inclusive)
+- max_disparity: maximum valid disparity value (inclusive)
+- verbose: enable TensorRT verbose logging
+- force_engine_update: rebuild engine if true
+"""
+
+from typing import List
+
 import launch
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
@@ -22,118 +45,28 @@ from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 
 
-def generate_launch_description():
-    launch_args = [
-        DeclareLaunchArgument(
-            'model_file_path',
-            default_value='',
-            description='The absolute file path to the ONNX file'
-        ),
-        DeclareLaunchArgument(
-            'engine_file_path',
-            default_value='',
-            description='The absolute file path to the TensorRT engine file'
-        ),
-        DeclareLaunchArgument(
-            'ess_plugin_file_path',
-            default_value='',
-            description='The absolute file path to the ESS TensorRT plugin library (.so)'
-        ),
-        DeclareLaunchArgument(
-            'input_image_width',
-            default_value='960',
-            description='The input image width'
-        ),
-        DeclareLaunchArgument(
-            'input_image_height',
-            default_value='576',
-            description='The input image height'
-        ),
-        DeclareLaunchArgument(
-            'model_input_width',
-            default_value='960',
-            description='The model input width'
-        ),
-        DeclareLaunchArgument(
-            'model_input_height',
-            default_value='576',
-            description='The model input height'
-        ),
-        DeclareLaunchArgument(
-            'input_tensor_names',
-            default_value='["input_left", "input_right"]',
-            description='A list of tensor names to bind to the specified input binding names'
-        ),
-        DeclareLaunchArgument(
-            'input_binding_names',
-            default_value='["input_left", "input_right"]',
-            description='A list of input tensor binding names (specified by model)'
-        ),
-        DeclareLaunchArgument(
-            'output_tensor_names',
-            default_value='["output_left", "output_conf"]',
-            description='A list of tensor names to bind to the specified output binding names'
-        ),
-        DeclareLaunchArgument(
-            'output_binding_names',
-            default_value='["output_left", "output_conf"]',
-            description='A list of output tensor binding names (specified by model)'
-        ),
-        DeclareLaunchArgument(
-            'verbose',
-            default_value='False',
-            description='Whether TensorRT should verbosely log or not'
-        ),
-        DeclareLaunchArgument(
-            'force_engine_update',
-            default_value='False',
-            description='Whether TensorRT should update the engine file or not'
-        ),
-        DeclareLaunchArgument(
-            'threshold',
-            default_value='0.4',
-            description='Confidence threshold for filtering disparity'
-        ),
-        DeclareLaunchArgument(
-            'min_disparity',
-            default_value='0.0',
-            description='Minimum disparity value (inclusive)'
-        ),
-        DeclareLaunchArgument(
-            'max_disparity',
-            default_value='10000.0',
-            description='Maximum disparity value (inclusive)'
-        ),
-    ]
-
-    # Bind launch configurations
-    input_image_width = LaunchConfiguration('input_image_width')
-    input_image_height = LaunchConfiguration('input_image_height')
+def generate_launch_description() -> launch.LaunchDescription:
+    """Create and return the stereo disparity pipeline launch description."""
+    # Exposed parameters
+    image_width = LaunchConfiguration('image_width')
+    image_height = LaunchConfiguration('image_height')
     model_input_width = LaunchConfiguration('model_input_width')
     model_input_height = LaunchConfiguration('model_input_height')
-
     model_file_path = LaunchConfiguration('model_file_path')
     engine_file_path = LaunchConfiguration('engine_file_path')
-    ess_plugin_file_path = LaunchConfiguration('ess_plugin_file_path')
-    input_tensor_names = LaunchConfiguration('input_tensor_names')
-    input_binding_names = LaunchConfiguration('input_binding_names')
-    output_tensor_names = LaunchConfiguration('output_tensor_names')
-    output_binding_names = LaunchConfiguration('output_binding_names')
+    min_disparity = LaunchConfiguration('min_disparity')
+    max_disparity = LaunchConfiguration('max_disparity')
     verbose = LaunchConfiguration('verbose')
     force_engine_update = LaunchConfiguration('force_engine_update')
 
-    min_disparity = LaunchConfiguration('min_disparity')
-    max_disparity = LaunchConfiguration('max_disparity')
-    threshold = LaunchConfiguration('threshold')
-
-    # Left image preprocessing pipeline
+    # Left preprocessing
     left_format_node = ComposableNode(
         name='left_format_node',
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ImageFormatConverterNode',
         parameters=[{
-            'image_width': input_image_width,
-            'image_height': input_image_height,
+            'image_width': image_width,
+            'image_height': image_height,
             'encoding_desired': 'rgb8',
         }],
         remappings=[
@@ -146,9 +79,13 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         parameters=[{
+            'input_width': image_width,
+            'input_height': image_height,
             'output_width': model_input_width,
             'output_height': model_input_height,
-            'keep_aspect_ratio': False,
+            'keep_aspect_ratio': True,
+            'encoding_desired': 'rgb8',
+            'disable_padding': True
         }],
         remappings=[
             ('image', 'left/image_rgb'),
@@ -157,16 +94,30 @@ def generate_launch_description():
             ('resize/camera_info', 'left/camera_info_resize'),
         ]
     )
+    left_pad_node = ComposableNode(
+        name='left_pad_node',
+        package='isaac_ros_image_proc',
+        plugin='nvidia::isaac_ros::image_proc::PadNode',
+        parameters=[{
+            'output_image_width': model_input_width,
+            'output_image_height': model_input_height,
+            'border_type': 'REPLICATE'
+        }],
+        remappings=[
+            ('image', 'left/image_resize'),
+            ('padded_image', 'left/image_pad'),
+        ]
+    )
     left_normalize_node = ComposableNode(
         name='left_normalize_node',
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ImageNormalizeNode',
         parameters=[{
-            'mean': [127.5, 127.5, 127.5],
-            'stddev': [127.5, 127.5, 127.5],
+            'mean': [123.675, 116.28, 103.53],
+            'stddev': [58.395, 57.12, 57.375],
         }],
         remappings=[
-            ('image', 'left/image_resize'),
+            ('image', 'left/image_pad'),
             ('normalized_image', 'left/image_normalize')
         ]
     )
@@ -211,14 +162,14 @@ def generate_launch_description():
         ]
     )
 
-    # Right image preprocessing pipeline
+    # Right preprocessing
     right_format_node = ComposableNode(
         name='right_format_node',
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ImageFormatConverterNode',
         parameters=[{
-            'image_width': input_image_width,
-            'image_height': input_image_height,
+            'image_width': image_width,
+            'image_height': image_height,
             'encoding_desired': 'rgb8',
         }],
         remappings=[
@@ -231,9 +182,13 @@ def generate_launch_description():
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ResizeNode',
         parameters=[{
+            'input_width': image_width,
+            'input_height': image_height,
             'output_width': model_input_width,
             'output_height': model_input_height,
-            'keep_aspect_ratio': False,
+            'keep_aspect_ratio': True,
+            'encoding_desired': 'rgb8',
+            'disable_padding': True
         }],
         remappings=[
             ('image', 'right/image_rgb'),
@@ -242,16 +197,30 @@ def generate_launch_description():
             ('resize/camera_info', 'right/camera_info_resize'),
         ]
     )
+    right_pad_node = ComposableNode(
+        name='right_pad_node',
+        package='isaac_ros_image_proc',
+        plugin='nvidia::isaac_ros::image_proc::PadNode',
+        parameters=[{
+            'output_image_width': model_input_width,
+            'output_image_height': model_input_height,
+            'border_type': 'REPLICATE'
+        }],
+        remappings=[
+            ('image', 'right/image_resize'),
+            ('padded_image', 'right/image_pad'),
+        ]
+    )
     right_normalize_node = ComposableNode(
         name='right_normalize_node',
         package='isaac_ros_image_proc',
         plugin='nvidia::isaac_ros::image_proc::ImageNormalizeNode',
         parameters=[{
-            'mean': [127.5, 127.5, 127.5],
-            'stddev': [127.5, 127.5, 127.5],
+            'mean': [123.675, 116.28, 103.53],
+            'stddev': [58.395, 57.12, 57.375],
         }],
         remappings=[
-            ('image', 'right/image_resize'),
+            ('image', 'right/image_pad'),
             ('normalized_image', 'right/image_normalize')
         ]
     )
@@ -296,7 +265,7 @@ def generate_launch_description():
         ]
     )
 
-    # Tensor sync and TensorRT inference
+    # Synchronize tensors
     tensor_pair_sync_node = ComposableNode(
         name='tensor_pair_sync_node',
         package='isaac_ros_tensor_proc',
@@ -304,14 +273,16 @@ def generate_launch_description():
         parameters=[{
             'input_tensor1_name': 'left_image',
             'input_tensor2_name': 'right_image',
-            'output_tensor1_name': 'input_left',
-            'output_tensor2_name': 'input_right'
+            'output_tensor1_name': 'left_image',
+            'output_tensor2_name': 'right_image'
         }],
         remappings=[
             ('tensor1', 'left/tensor_reshape'),
             ('tensor2', 'right/tensor_reshape'),
         ]
     )
+
+    # TensorRT inference
     tensor_rt_node = ComposableNode(
         name='tensor_rt',
         package='isaac_ros_tensor_rt',
@@ -319,46 +290,64 @@ def generate_launch_description():
         parameters=[{
             'model_file_path': model_file_path,
             'engine_file_path': engine_file_path,
-            'input_tensor_names': input_tensor_names,
-            'input_binding_names': input_binding_names,
-            'output_tensor_names': output_tensor_names,
-            'output_binding_names': output_binding_names,
+            'input_tensor_names': ['left_image', 'right_image'],
+            'input_binding_names': ['left_image', 'right_image'],
+            'output_tensor_names': ['disparity'],
+            'output_binding_names': ['disparity'],
             'verbose': verbose,
-            'force_engine_update': force_engine_update,
-            'custom_plugin_lib': ess_plugin_file_path
+            'force_engine_update': force_engine_update
         }]
     )
 
-    # Disparity decoder node
-    ess_decoder_node = ComposableNode(
+    # Decoder
+    dnn_stereo_decoder_node = ComposableNode(
         name='dnn_stereo_decoder',
         package='isaac_ros_dnn_stereo_decoder',
         plugin='nvidia::isaac_ros::dnn_stereo_depth::DNNStereoDecoderNode',
         parameters=[{
-            'disparity_tensor_name': 'output_left',
-            'confidence_tensor_name': 'output_conf',
-            'confidence_threshold': threshold,
+            'disparity_tensor_name': 'disparity',
             'min_disparity': min_disparity,
-            'max_disparity': max_disparity,
+            'max_disparity': max_disparity
         }],
         remappings=[
+            # Feed the resized right camera info into the decoder
             ('right/camera_info', 'right/camera_info_resize')
         ]
     )
 
+    nodes: List[ComposableNode] = [
+        left_format_node, left_resize_node, left_pad_node, left_normalize_node,
+        left_tensor_node, left_planar_node, left_reshape_node,
+        right_format_node, right_resize_node, right_pad_node, right_normalize_node,
+        right_tensor_node, right_planar_node, right_reshape_node,
+        tensor_pair_sync_node, tensor_rt_node, dnn_stereo_decoder_node
+    ]
+
     container = ComposableNodeContainer(
-        name='ess_container',
-        namespace='ess_container',
         package='rclcpp_components',
+        name='dnn_stereo_decoder_container',
+        namespace='',
         executable='component_container_mt',
-        composable_node_descriptions=[
-            left_format_node, left_resize_node, left_normalize_node,
-            left_tensor_node, left_planar_node, left_reshape_node,
-            right_format_node, right_resize_node, right_normalize_node,
-            right_tensor_node, right_planar_node, right_reshape_node,
-            tensor_pair_sync_node, tensor_rt_node, ess_decoder_node,
-        ],
+        composable_node_descriptions=nodes,
         output='screen'
     )
 
-    return launch.LaunchDescription(launch_args + [container])
+    return launch.LaunchDescription([
+        DeclareLaunchArgument('image_width', default_value='960'),
+        DeclareLaunchArgument('image_height', default_value='576'),
+        DeclareLaunchArgument('model_input_width', default_value='960'),
+        DeclareLaunchArgument('model_input_height', default_value='576'),
+        DeclareLaunchArgument(
+            'model_file_path',
+            default_value='/tmp/dnn_stereo_decoder_model.onnx'
+        ),
+        DeclareLaunchArgument(
+            'engine_file_path',
+            default_value='/tmp/dnn_stereo_decoder_model.plan'
+        ),
+        DeclareLaunchArgument('min_disparity', default_value='0.0'),
+        DeclareLaunchArgument('max_disparity', default_value='10000.0'),
+        DeclareLaunchArgument('verbose', default_value='false'),
+        DeclareLaunchArgument('force_engine_update', default_value='false'),
+        container
+    ])
