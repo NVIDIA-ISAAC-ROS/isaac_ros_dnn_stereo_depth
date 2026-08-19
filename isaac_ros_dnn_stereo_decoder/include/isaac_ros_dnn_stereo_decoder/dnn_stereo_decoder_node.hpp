@@ -34,9 +34,9 @@
 
 #include "isaac_ros_common/qos.hpp"
 #include "isaac_ros_common/cuda_stream.hpp"
-#include "isaac_ros_nitros_tensor_list_type/nitros_tensor_list.hpp"
 #include "isaac_ros_nitros_disparity_image_type/nitros_disparity_image.hpp"
 #include "isaac_ros_nitros_disparity_image_type/nitros_disparity_image_builder.hpp"
+#include "isaac_ros_nitros_tensor_list_type/nitros_tensor_list.hpp"
 
 #include "isaac_ros_dnn_stereo_decoder/filter_disparity.cu.hpp"
 

@@ -276,6 +276,7 @@ class IsaacROSEssLaunchFragment(IsaacROSLaunchFragment):
                     'confidence_threshold': threshold,
                     'min_disparity': min_disparity,
                     'max_disparity': max_disparity,
+                    'cache_camera_info': True,
                 }],
                 remappings=[
                     ('right/camera_info', 'right/camera_info_resize')
