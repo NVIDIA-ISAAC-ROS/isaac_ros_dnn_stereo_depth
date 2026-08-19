@@ -23,6 +23,7 @@ ament_auto_find_build_dependencies()
 
 install_isaac_ros_asset(install_ess_models)
 install(PROGRAMS asset_scripts/install_ess_models.sh DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS asset_scripts/deduplicate_shared_constants.py DESTINATION lib/${PROJECT_NAME})
 
 
 # Embed versioning information into installed files
