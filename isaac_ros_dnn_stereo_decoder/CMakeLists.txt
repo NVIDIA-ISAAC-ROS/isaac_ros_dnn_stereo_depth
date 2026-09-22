@@ -41,6 +41,9 @@ ament_auto_add_library(dnn_stereo_decoder_node SHARED
 rclcpp_components_register_nodes(dnn_stereo_decoder_node "nvidia::isaac_ros::dnn_stereo_depth::DNNStereoDecoderNode")
 set(node_plugins "${node_plugins}nvidia::isaac_ros::dnn_stereo_depth::DNNStereoDecoderNode;$<TARGET_FILE:dnn_stereo_decoder_node>\n")
 target_include_directories(dnn_stereo_decoder_node PUBLIC include)
+target_link_libraries(dnn_stereo_decoder_node
+  CUDA::cudart
+)
 set_target_properties(dnn_stereo_decoder_node PROPERTIES
   BUILD_WITH_INSTALL_RPATH TRUE
   BUILD_RPATH_USE_ORIGIN TRUE

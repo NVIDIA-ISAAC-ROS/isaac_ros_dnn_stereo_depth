@@ -19,24 +19,20 @@
 #define ISAAC_ROS_DNN_STEREO_DECODER__DNN_STEREO_DECODER_NODE_HPP_
 
 #include <memory>
-#include <string>
-#include <vector>
-#include <limits>
 #include <mutex>
-#include <atomic>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/header.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
-#include "message_filters/subscriber.h"
-#include "message_filters/synchronizer.h"
-#include "message_filters/sync_policies/exact_time.h"
+#include "stereo_msgs/msg/disparity_image.hpp"
+#include "message_filters/subscriber.hpp"
+#include "message_filters/synchronizer.hpp"
+#include "message_filters/sync_policies/exact_time.hpp"
 
 #include "isaac_ros_common/qos.hpp"
 #include "isaac_ros_common/cuda_stream.hpp"
-#include "isaac_ros_nitros_disparity_image_type/nitros_disparity_image.hpp"
-#include "isaac_ros_nitros_disparity_image_type/nitros_disparity_image_builder.hpp"
-#include "isaac_ros_nitros_tensor_list_type/nitros_tensor_list.hpp"
+#include "isaac_ros_tensor_msgs/msg/tensor_list.hpp"
+#include "tensor_msgs/msg/experimental_tensor.hpp"
 
 #include "isaac_ros_dnn_stereo_decoder/filter_disparity.cu.hpp"
 
@@ -47,13 +43,16 @@ namespace isaac_ros
 namespace dnn_stereo_depth
 {
 
+using Tensor = tensor_msgs::msg::ExperimentalTensor;
+using TensorList = isaac_ros_tensor_msgs::msg::TensorList;
+
 /// Node that converts a disparity tensor output by a DNN into a disparity image message.
 /**
  * This node:
- *  - Subscribes to a Nitros disparity tensor and right camera info
+ *  - Subscribes to a TensorListMsg disparity tensor and right camera info
  *  - Optionally applies a confidence threshold if a confidence tensor is provided
  *  - Filters invalid/out-of-range disparity values on the GPU
- *  - Publishes a NitrosDisparityImage with disparity parameters populated from camera info
+ *  - Publishes a stereo_msgs::DisparityImage with disparity parameters from camera info
  */
 class DNNStereoDecoderNode : public rclcpp::Node
 {
@@ -67,12 +66,12 @@ public:
 private:
   /// Callback for synchronized tensor and camera info messages (cache_camera_info=false).
   void SynchronizedCallback(
-    const nvidia::isaac_ros::nitros::NitrosTensorList::ConstSharedPtr & tensor_msg,
+    const TensorList::ConstSharedPtr & tensor_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & camera_info_msg);
   /// Callback invoked when messages are dropped by the synchronizer (cache_camera_info=false).
   /// Discards the message with a warning log.
   void UnsynchronizedCallback(
-    const nvidia::isaac_ros::nitros::NitrosTensorList::ConstSharedPtr & tensor_msg,
+    const TensorList::ConstSharedPtr & tensor_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & camera_info_msg);
 
   /// Callback for camera info messages (cache_camera_info=true).
@@ -83,11 +82,11 @@ private:
   /// Callback for tensor messages (cache_camera_info=true).
   /// Processes every tensor using the cached camera info.
   void TensorCallback(
-    const nvidia::isaac_ros::nitros::NitrosTensorList::ConstSharedPtr & tensor_msg);
+    const TensorList::ConstSharedPtr & tensor_msg);
 
   // Helper function to process tensor and camera info (common logic for both callbacks)
   void ProcessTensorAndCameraInfo(
-    const nvidia::isaac_ros::nitros::NitrosTensorList::ConstSharedPtr & tensor_msg,
+    const TensorList::ConstSharedPtr & tensor_msg,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr & camera_info_msg);
 
   // QOS settings
@@ -104,22 +103,21 @@ private:
   mutable std::mutex camera_info_mutex_;
 
   // Message filter subscribers for synchronization mode (cache_camera_info=false)
-  message_filters::Subscriber<nvidia::isaac_ros::nitros::NitrosTensorList> tensor_nitros_sub_;
+  message_filters::Subscriber<TensorList> tensor_sub_;
   message_filters::Subscriber<sensor_msgs::msg::CameraInfo> camera_info_sub_;
 
   // Message filter synchronizer (cache_camera_info=false)
   using ExactPolicy = message_filters::sync_policies::ExactTime<
-    nvidia::isaac_ros::nitros::NitrosTensorList,
+    TensorList,
     sensor_msgs::msg::CameraInfo>;
   message_filters::Synchronizer<ExactPolicy> sync_;
 
   // Separate subscribers for caching mode (cache_camera_info=true)
-  rclcpp::Subscription<nvidia::isaac_ros::nitros::NitrosTensorList>::SharedPtr
-    tensor_sub_cached_mode_;
+  rclcpp::Subscription<TensorList>::SharedPtr tensor_sub_cached_mode_;
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_sub_cached_mode_;
 
-  // Publisher for output NitrosDisparityImage messages
-  rclcpp::Publisher<nvidia::isaac_ros::nitros::NitrosDisparityImage>::SharedPtr nitros_pub_;
+  // Publisher for output DisparityImage messages
+  rclcpp::Publisher<stereo_msgs::msg::DisparityImage>::SharedPtr disparity_pub_;
 
   // Tensor names and parameters
   std::string disparity_tensor_name_{};
@@ -130,41 +128,12 @@ private:
 
   // Compute dims depending on tensor rank (H,W indices are 1,2 for rank-3; else 2,3)
   /// Compute the dimension index for height given the tensor rank.
-  static inline int ComputeHeightDim(uint32_t rank) {return rank == 3 ? 1 : 2;}
+  static inline int ComputeHeightDim(size_t rank) {return rank == 3 ? 1 : 2;}
   /// Compute the dimension index for width given the tensor rank.
-  static inline int ComputeWidthDim(uint32_t rank) {return rank == 3 ? 2 : 3;}
+  static inline int ComputeWidthDim(size_t rank) {return rank == 3 ? 2 : 3;}
 
   // CUDA stream for GPU operations
   cudaStream_t stream_;
-
-  // Optional preallocation settings
-  bool reusable_buffer_enable_{};
-  int reusable_buffer_count_{};
-  int reusable_buffer_width_{};
-  int reusable_buffer_height_{};
-  bool reusable_buffer_enable_dynamic_{};
-
-  struct ReusableBufferEntry
-  {
-    void * ptr{nullptr};
-    std::shared_ptr<std::atomic<bool>> in_use{std::make_shared<std::atomic<bool>>(false)};
-  };
-
-  // Pool of reusable device buffers for output disparity
-  std::vector<ReusableBufferEntry> reusable_buffers_;
-  size_t reusable_buffer_size_bytes_{0};
-  uint32_t reusable_buffer_width_runtime_{0};
-  uint32_t reusable_buffer_height_runtime_{0};
-
-  // Pool management
-  inline size_t ComputeRequiredBytes(uint32_t width, uint32_t height) const
-  {
-    return static_cast<size_t>(width) * static_cast<size_t>(height) * sizeof(float);
-  }
-  void AllocateReusableBufferPool(uint32_t width, uint32_t height, int count);
-  void FreeReusableBufferPool();
-  void * AcquireReusableBuffer();
-  static void ReleaseReusableBuffer(const std::shared_ptr<std::atomic<bool>> & in_use_flag);
 };
 
 }  // namespace dnn_stereo_depth

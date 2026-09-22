@@ -82,10 +82,10 @@ def generate_launch_description() -> launch.LaunchDescription:
         namespace='',
         executable='component_container_mt',
         composable_node_descriptions=IsaacROSDnnStereoDecoderLaunchFragment
-        .get_composable_nodes().values(),
+        .get_composable_nodes({}).values(),
         output='screen'
     )
 
     return launch.LaunchDescription(
         [dnn_stereo_decoder_container] +
-        IsaacROSDnnStereoDecoderLaunchFragment.get_launch_actions().values())
+        list(IsaacROSDnnStereoDecoderLaunchFragment.get_launch_actions({}).values()))

@@ -23,7 +23,7 @@ This pipeline performs:
 - Tensor preparation (image to tensor, interleaved to planar, reshape)
 - Tensor pair synchronization
 - TensorRT inference producing a disparity tensor
-- DNNStereoDecoder to convert disparity tensor into a `NitrosDisparityImage`
+- DNNStereoDecoder to convert a disparity tensor into a `stereo_msgs/msg/DisparityImage`
 
 Expected launch arguments:
 - image_width: input/output width used by the model
