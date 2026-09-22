@@ -21,7 +21,7 @@ SPDX-License-Identifier: Apache-2.0
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>isaac_ros_ess</name>
-  <version>4.6.0</version>
+  <version>5.0.0</version>
   <description>DNN Stereo Disparity Network for Isaac ROS</description>
 
   <maintainer email="isaac-ros-maintainers@nvidia.com">Isaac ROS Maintainers</maintainer>
@@ -39,6 +39,7 @@ SPDX-License-Identifier: Apache-2.0
   <exec_depend>isaac_ros_tensor_proc</exec_depend>
   <exec_depend>isaac_ros_tensor_rt</exec_depend>
   <exec_depend>isaac_ros_test</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

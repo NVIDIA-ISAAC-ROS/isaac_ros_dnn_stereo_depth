@@ -363,16 +363,20 @@ class IsaacROSFoundationStereoLaunchFragment(IsaacROSLaunchFragment):
 
 
 def generate_launch_description():
+    interface_specs = {}
     foundationstereo_container = ComposableNodeContainer(
         package='rclcpp_components',
         name='foundationstereo_container',
         namespace='',
         executable='component_container_mt',
-        composable_node_descriptions=IsaacROSFoundationStereoLaunchFragment
-        .get_composable_nodes().values(),
+        composable_node_descriptions=list(
+            IsaacROSFoundationStereoLaunchFragment
+            .get_composable_nodes(interface_specs).values()
+        ),
         output='screen'
     )
 
     return launch.LaunchDescription(
         [foundationstereo_container] +
-        IsaacROSFoundationStereoLaunchFragment.get_launch_actions().values())
+        list(IsaacROSFoundationStereoLaunchFragment
+             .get_launch_actions(interface_specs).values()))

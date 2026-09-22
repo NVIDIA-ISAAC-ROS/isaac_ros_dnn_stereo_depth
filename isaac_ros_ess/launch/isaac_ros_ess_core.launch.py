@@ -383,8 +383,9 @@ def generate_launch_description():
         namespace='',
         package='rclcpp_components',
         executable='component_container_mt',
-        composable_node_descriptions=IsaacROSEssLaunchFragment
-        .get_composable_nodes().values(),
+        composable_node_descriptions=list(
+            IsaacROSEssLaunchFragment.get_composable_nodes({}).values()
+        ),
         output='screen'
     )
 
