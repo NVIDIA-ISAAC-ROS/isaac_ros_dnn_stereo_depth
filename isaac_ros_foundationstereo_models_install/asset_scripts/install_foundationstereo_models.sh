@@ -14,10 +14,12 @@
 set -e
 if [ -n "$TENSORRT_COMMAND" ]; then
   # If a custom tensorrt is used, ensure it's lib directory is added to the LD_LIBRARY_PATH
-  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(readlink -f $(dirname ${TENSORRT_COMMAND})/../../../lib/$(uname -p)-linux-gnu/)"
+  # Keep export and assignment together so lookup failures remain masked under set -e.
+  # shellcheck disable=SC2155
+  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(readlink -f "$(dirname "${TENSORRT_COMMAND}")/../../../lib/$(uname -p)-linux-gnu/")"
 fi
 if [ -z "$ISAAC_ROS_WS" ] && [ -n "$ISAAC_ROS_ASSET_MODEL_PATH" ]; then
-  ISAAC_ROS_WS="$(readlink -f $(dirname ${ISAAC_ROS_ASSET_MODEL_PATH})/../../../..)"
+  ISAAC_ROS_WS="$(readlink -f "$(dirname "${ISAAC_ROS_ASSET_MODEL_PATH}")/../../../..")"
 fi
 
 # Available model configurations
@@ -26,69 +28,79 @@ MODEL_CONFIGS["low_res"]="320x736:deployable_foundationstereo_small_320x736_v2.0
 MODEL_CONFIGS["high_res"]="576x960:deployable_foundationstereo_small_576x960_v2.0.onnx"
 
 # Default model - use environment variable if set and valid, otherwise use hardcoded default
-if [[ -n "$FOUNDATIONSTEREO_MODEL_RES" ]] && [[ -n "${MODEL_CONFIGS[$FOUNDATIONSTEREO_MODEL_RES]}" ]]; then
-    SELECTED_MODEL="$FOUNDATIONSTEREO_MODEL_RES"
-elif [[ -n "$FOUNDATIONSTEREO_MODEL_RES" ]]; then
-    echo "Warning: Invalid FOUNDATIONSTEREO_MODEL_RES='$FOUNDATIONSTEREO_MODEL_RES'. Using default 'high_res'. Available resolutions: ${!MODEL_CONFIGS[*]}" >&2
-    SELECTED_MODEL="high_res"
+if [[ -n $FOUNDATIONSTEREO_MODEL_RES ]] && [[ -n ${MODEL_CONFIGS[$FOUNDATIONSTEREO_MODEL_RES]} ]]; then
+  SELECTED_MODEL="$FOUNDATIONSTEREO_MODEL_RES"
+elif [[ -n $FOUNDATIONSTEREO_MODEL_RES ]]; then
+  echo "Warning: Invalid FOUNDATIONSTEREO_MODEL_RES='$FOUNDATIONSTEREO_MODEL_RES'. Using default 'high_res'. Available resolutions: ${!MODEL_CONFIGS[*]}" >&2
+  SELECTED_MODEL="high_res"
 else
-    SELECTED_MODEL="high_res"
+  SELECTED_MODEL="high_res"
 fi
 
 function usage() {
-    echo "Usage: $0 --eula [--model_res|-m <model_resolution>]"
-    echo "Available resolutions:"
-    echo "  low_res: 320x736 resolution"
-    echo "  high_res: 576x960 resolution (default)"
-    echo ""
-    echo "Environment Variables:"
-    echo "  FOUNDATIONSTEREO_MODEL_RES: Set default model resolution (low_res|high_res)"
+  echo "Usage: $0 --eula [--model_res|-m <model_resolution>]"
+  echo "Available resolutions:"
+  echo "  low_res: 320x736 resolution"
+  echo "  high_res: 576x960 resolution (default)"
+  echo ""
+  echo "Environment Variables:"
+  echo "  FOUNDATIONSTEREO_MODEL_RES: Set default model resolution (low_res|high_res)"
 }
 
 PASSTHRU_ARGS=()
-while (( "$#" )); do
-    case "$1" in
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        -m|--model_res)
-            if [[ -n "$2" ]]; then
-                SELECTED_MODEL="$2"; shift 2
-            else
-                echo "Error: --model_res requires a value" >&2; exit 2
-            fi
-            ;;
-        *)
-            PASSTHRU_ARGS+=("$1"); shift
-            ;;
-    esac
+while (("$#")); do
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -m | --model_res)
+      if [[ -n $2 ]]; then
+        SELECTED_MODEL="$2"
+        shift 2
+      else
+        echo "Error: --model_res requires a value" >&2
+        exit 2
+      fi
+      ;;
+    *)
+      PASSTHRU_ARGS+=("$1")
+      shift
+      ;;
+  esac
 done
 
 # Validate model selection
-if [[ -z "${MODEL_CONFIGS[$SELECTED_MODEL]}" ]]; then
-    echo "Error: Invalid resolution '$SELECTED_MODEL'. Available resolutions: ${!MODEL_CONFIGS[*]}" >&2
-    exit 2
+if [[ -z ${MODEL_CONFIGS[$SELECTED_MODEL]} ]]; then
+  echo "Error: Invalid resolution '$SELECTED_MODEL'. Available resolutions: ${!MODEL_CONFIGS[*]}" >&2
+  exit 2
 fi
 
 # Parse selected model configuration
-IFS=':' read -r RESOLUTION MODEL_FILE_NAME <<< "${MODEL_CONFIGS[$SELECTED_MODEL]}"
-IFS='x' read -r HEIGHT WIDTH <<< "$RESOLUTION"
+IFS=':' read -r RESOLUTION MODEL_FILE_NAME <<<"${MODEL_CONFIGS[$SELECTED_MODEL]}"
+# Parsed for input validation; the dimensions are not otherwise needed here.
+# shellcheck disable=SC2034
+IFS='x' read -r HEIGHT WIDTH <<<"$RESOLUTION"
 
 ASSET_NAME="foundationstereo"
 VERSION="deployable_v2.0"
+# Used by the sourced EULA helper.
+# shellcheck disable=SC2034
 EULA_URL="https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/foundationstereo"
 MODELS_DIR="${ISAAC_ROS_WS}/isaac_ros_assets/models/${ASSET_NAME}"
 ASSET_DIR="${MODELS_DIR}/${VERSION}"
 FOUNDATIONSTEREO_MODEL_URL="https://api.ngc.nvidia.com/v2/models/nvidia/tao/foundationstereo/versions/${VERSION}/files/${MODEL_FILE_NAME}"
+# Used by the sourced EULA helper.
+# shellcheck disable=SC2034
 ASSET_INSTALL_PATHS="${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine"
 
 # Pass arguments to the EULA helper
 set -- "${PASSTHRU_ARGS[@]}"
+# shellcheck source=/dev/null
 source "${ISAAC_ROS_ASSET_EULA_SH:-isaac_ros_asset_eula.sh}"
 
 # Create directories if they don't exist
-mkdir -p ${ASSET_DIR}
+mkdir -p "${ASSET_DIR}"
 
 # Download ONNX model file
 isaac_ros_common_download_asset --url "${FOUNDATIONSTEREO_MODEL_URL}" --output-path "${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx" --cache-path "${ISAAC_ROS_FOUNDATIONSTEREO_MODEL}"
@@ -103,5 +115,5 @@ fi
 # Create FoundationStereo engine using TensorRT
 echo "Converting FoundationStereo ${SELECTED_MODEL} onnx file to engine file."
 ${TENSORRT_COMMAND:-/usr/src/tensorrt/bin/trtexec} \
-    --onnx=${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx \
-    --saveEngine=${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine \
+  --onnx="${ASSET_DIR}/foundationstereo_${RESOLUTION}.onnx" \
+  --saveEngine="${ASSET_DIR}/foundationstereo_${RESOLUTION}.engine"
