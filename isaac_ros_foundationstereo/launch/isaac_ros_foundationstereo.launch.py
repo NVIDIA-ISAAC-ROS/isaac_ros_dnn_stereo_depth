@@ -111,7 +111,7 @@ def generate_launch_description():
         parameters=[{
             'output_width': input_image_width,
             'output_height': input_image_height,
-            'border_type': 'repeat'
+            'border_type': 'REPLICATE'
         }],
         remappings=[
             ('image_raw', 'left/image_raw'),
@@ -221,7 +221,7 @@ def generate_launch_description():
         parameters=[{
             'output_width': input_image_width,
             'output_height': input_image_height,
-            'border_type': 'repeat'
+            'border_type': 'REPLICATE'
         }],
         remappings=[
             ('image_raw', 'right/image_raw'),

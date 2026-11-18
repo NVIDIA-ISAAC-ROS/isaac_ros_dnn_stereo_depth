@@ -89,8 +89,21 @@ class FoundationStereoVisualizer(Node):
 
         self.create_timer(5, self.timer_callback)
 
+        for path in (self.args.left_image_path, self.args.right_image_path,
+                     self.args.camera_info_path):
+            if not os.path.isfile(path):
+                self.get_logger().error(f'File not found: {path}')
+                raise FileNotFoundError(path)
+
         left_img = cv2.imread(self.args.left_image_path)
         right_img = cv2.imread(self.args.right_image_path)
+        if left_img is None or right_img is None:
+            self.get_logger().error('Failed to read left/right image file')
+            raise ValueError('Invalid left or right image file')
+
+        # cv2.imread returns BGR; the messages are published as rgb8.
+        left_img = cv2.cvtColor(left_img, cv2.COLOR_BGR2RGB)
+        right_img = cv2.cvtColor(right_img, cv2.COLOR_BGR2RGB)
         self.left_msg = self._bridge.cv2_to_imgmsg(np.array(left_img), self.encoding)
         self.right_msg = self._bridge.cv2_to_imgmsg(np.array(right_img), self.encoding)
 
